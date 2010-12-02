@@ -27,13 +27,13 @@ Options
 3. Enable to interpret `if` statements and loops (15 points)
 
 
-BNF syntax for shell inputs
-----------------------------
+Shell input syntax in BNF
+---------------------------
 
         <command_sequence> ::= <piped_command> { '|' <command_sequence> }
         <piped_command> ::= <command_line> { <redirect_in> } { <redirect_out> } { <option> }
-        <redirect_in> ::=  { <num> } '<' { '&' }{ <fd> } { <redirect_in> }
-        <redirect_out> ::= { <num> } '>' { ('>' | '&') }{ <fd> } { <redirect_out> }
+        <redirect_in> ::=  { <num> } '<' { '&' }{ <num> } { <redirect_in> }
+        <redirect_out> ::= { <num> } '>' { ('>' | '&') }{ <num> } { <redirect_out> }
         <command_line> ::= { <env_assignment> } <command> { <option> }
         <command> ::= <word> 
         <option> ::= <word> | <env_assignment> { <option> }
