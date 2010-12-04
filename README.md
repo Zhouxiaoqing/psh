@@ -30,13 +30,16 @@ Options
 Shell input syntax in BNF
 ---------------------------
 
-        <command_sequence> ::= <piped_command> { '|' <command_sequence> }
-        <piped_command> ::= <command_line> { <redirect_in> } { <redirect_out> } { <option> }
-        <redirect_in> ::=  { <num> } '<' { '&' }{ <num> } { <redirect_in> }
-        <redirect_out> ::= { <num> } '>' { ('>' | '&') }{ <num> } { <redirect_out> }
-        <command_line> ::= { <env_assignment> } <command> { <option> }
-        <command> ::= <word> 
-        <option> ::= <word> | <env_assignment> { <option> }
+        <piped_commands> ::= <command> { '|' <piped_commands> }
+        <command> ::= <command_element> { <command> }
+        <redirect_in> ::=  { <num> } '<' { '&' }{ <word> }
+        <redirect_out> ::= { <num> } '>' { '>' } { '&' }{ <word> }
+        <redirection> ::= <redirect_in>
+                        | <redirect_out>
+        <redirection_list> ::= <redirection> { <redirection_list> } 
+        <command_element> ::= <word>
+                            | <env_assignment>
+                            | <redirection_list>
 
         <digit> ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' 
         <alpha> ::= 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' 
@@ -46,14 +49,15 @@ Shell input syntax in BNF
                   | 'K' | 'L' | 'M' | 'N' | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' 
                   | 'U' | 'V' | 'W' | 'X' | 'Y' | 'Z' 
         <alphanum> ::= (<alpha> | <num>) { <alphanum> }
-        <num> ::= <digit> | <digit> <num>
-        <special> ::= '!' | '"' | '#' | '$' | '%' | ''' | '(' | ')' | '*' | '+' | ',' 
+        <special> ::= '!' | '"' | '#' | '%' | ''' | '(' | ')' | '*' | '+' | ',' 
                     | '-' | '.' | '/' | ':' | ';" | '?' | '@' | '[' | ']' | '&' 
                     | '\' | '^' | '_' | '`' | '{' | '|' | '}' 
         <home> ::= '~'
         <env> ::= '$' <word>
+        <num> ::= <digit> | <digit> { <num> }
         <env_assignment> ::= <word> '=' <word>
-        <word> ::= (<alphanum> | <special> | <home>) { (<word> | <env> }
+        <word> ::= <env>
+                 | (<alpha> | <digit> | <special> | <home>) { <word> }
         
 
 Copyright
