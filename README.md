@@ -1,7 +1,7 @@
 psh - Naive shell with recursive descent parser
 ================================================
 
-Exercise on C and system programming
+Exercise on C and system programming.
 
 Goal
 -----
@@ -64,3 +64,9 @@ Copyright
 ---------
 
 Copyright (c) 2010 Taku Fukushima. All rights reserved.
+
+
+License
+--------
+
+psh is [MIT Lisense](http://www.opensource.org/licenses/mit-license.php)
