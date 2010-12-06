@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "parser.h"
@@ -41,7 +42,6 @@ static char **logo = {
     "==========================\n",
 };
 
-
 /*
  * say_hello - display greeting for user
  */
@@ -49,7 +49,7 @@ static void say_hello()
 {
     time_t timer;
     timer = time(NULL);
-    printf("psh ::%s", ctime(&timer));
+    printf("%s", ctime(&timer));
 }
 
 /*
@@ -65,7 +65,7 @@ static void fork_chain(tokenizer_t *t, int i)
     redirection_t redirect_out;
 
     current_command = t->command[i];
-    if (i < t->p && current_command) {
+    if (i < t->p && strlen(current_command.cmd) != 0) {
         if (pipe(file_pipes) == 0) {
             fork_result = fork();
             if (fork_result == (pid_t) -1) {
@@ -80,7 +80,7 @@ static void fork_chain(tokenizer_t *t, int i)
                     close(1);
                     dup(file_pipes[1]);
                 }
-                close(file_pipes[1]);v
+                close(file_pipes[1]);
                 
                 // Input redirection
                 redirect_in = current_command.redirection[0];
@@ -88,7 +88,7 @@ static void fork_chain(tokenizer_t *t, int i)
                     redirect_in.input == true ) {
                     if (!freopen(redirect_in.filename, "r", stdin)) {
                         fprintf(stderr,
-                                "could not redirect stdin from file %s\n"
+                                "could not redirect stdin from file %s\n",
                                 redirect_in.filename);
                         exit(2);
                     }
@@ -99,7 +99,7 @@ static void fork_chain(tokenizer_t *t, int i)
                     redirect_out.input == false ) {
                     if (!freopen(redirect_out.filename, "w", stdout)) {
                         fprintf(stderr,
-                                "could not redirect stdout from file %s\n"
+                                "could not redirect stdout from file %s\n",
                                 redirect_out.filename);
                         exit(2);
                     }
@@ -125,11 +125,11 @@ int main(int argc, char **argv)
     char input[INPUT_MAX];
     
     say_hello();
-    puts("psh-$ ");
-    while (gets(input) != EOF) {
+    printf("[0;32;40mpsh-$ [0;37;40m");
+    while (fgets(input, INPUT_MAX, stdin) != EOF) {
         t = init_tokenizer(input);
         parse_input(t);
-        fork_chain(0);
+        fork_chain(t, 0);
     }
-    exit(EXIT_FAILLURE);
+    exit(EXIT_FAILURE);
 }

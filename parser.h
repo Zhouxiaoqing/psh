@@ -23,6 +23,7 @@
 #ifndef PSH_PARSER_H_
 #define PSH_PARSER_H_
 
+#include <stdbool.h>
 #include <sys/types.h>
 
 #define PIPE_MAX  8
@@ -38,7 +39,7 @@ typedef enum {
     REDIRECT_OUT,
     REDIRECT_OUT_APPEND,
     REDIRECTION,
-    REDIRECTTION_LIST,
+    REDIRECTION_LIST,
     COMMAND_ELEMENT,
     DIGIT,
     ALPHA,
@@ -51,7 +52,7 @@ typedef enum {
     WORD,
     ERROR,
     END_OF_FILE
-} tokens_spec_t;
+} token_spec_t;
 
 typedef struct token {
     token_spec_t spec;
@@ -75,31 +76,32 @@ typedef struct tokenizer {
     int c;
     int p; // the number of current pipe
     char *input;
-    commant_t command[PIPE_MAX];
+    command_t command[PIPE_MAX];
 } tokenizer_t;
 
 /**
  * init_tokenizer - Initialize and set up scanninig from input.
  * @input: input from prompt
  */
-const tokenizer_t init_tokenizer(const char *input);
+const tokenizer_t *init_tokenizer(const char *input);
 
 /**
  * current_token - Get current token.
  * @t: Token information and next character.
  */
-const token_t *current_token(tokenizer_t t);
+const token_t *current_token(tokenizer_t *t);
 
 /**
  * current_token - Scan input and return next token.
  * @t: Token information and next character.
  */
-const token_t *next_token(tokenizer_t t);
+const token_t *next_token(tokenizer_t *t);
 
 /**
  * syntax_error - Deal with syntax error of input.
  * @t: Token information and next character.
  */
-void syntax_error(tokenizer_t t);
+void syntax_error(tokenizer_t *t);
 
 #endif  // PSH_PARSER_H_
+

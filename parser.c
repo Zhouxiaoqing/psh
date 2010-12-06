@@ -20,28 +20,64 @@
   THE SOFTWARE.
 */
 
-#include <ctypes.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "parser.h"
+
+static const char _getc(char *input);
+static token_t *_init_token(tokenizer_t *t);
+static void _append_token(token_t *token, const char c);
+static const token_t *_parse_word(tokenizer_t *t);
+static const token_t *_parse_num(tokenizer_t *t);
+static const token_t *_parse_env(tokenizer_t *t);
+static const token_t *_parse_home(tokenizer_t *t);
+static const token_t *_parse_env_assignment(tokenizer_t *t);
+static const token_t *_parse_redirect_in(tokenizer_t *t);
+static const token_t *_parse_redirect_out(tokenizer_t *t);
+static const token_t *_next_token(tokenizer_t *t);
+static const token_t *eat_word(tokenizer_t *t);
+static const token_t *eat_env(tokenizer_t *t);
+static const token_t *eat_env_assignment(tokenizer_t *t);
+static const token_t *eat_home(tokenizer_t *t);
+static const token_t *eat_redirect_out(tokenizer_t *t);
+static const token_t *eat_redirect_in(tokenizer_t *t);
+static const token_t *eat_redirection(tokenizer_t *t);
+static const token_t *eat_command_element(tokenizer_t *t);
+static const token_t *eat_redirection_list(tokenizer_t *t);
+static const token_t *eat_command(tokenizer_t *t);
+static const token_t *eat_piped_command(tokenizer_t *t);
+
+/*
+ * _getc - get a character from input
+ */
+static const char _getc(char *input)
+{
+    char c = input[0];
+    input++;
+    return c;
+}
 
 /**
  * init_tokenizer - Initialize and set up scanninig from input.
  * @input: input from prompt
  */
-tokenizer_t *init_tokenizer(const char *input)
+const tokenizer_t *init_tokenizer(const char *input)
 {
+    int i = 0;
     tokenizer_t *t = (tokenizer_t *) malloc(sizeof(tokenizer_t));
+    
     t->p = 0;
-    for (int i = 0; i < PIPE_MAX; i++)
+    for (i = 0; i < PIPE_MAX; i++)
         t->command[i].command_flag = false;
-    strncpy(t->input, input, strlen(input));
+    strncpy(t->input, input, INPUT_MAX);
     // Read first character from input.
-    t->c = fgetc(input);
+    t->c = _getc(t->input);
     next_token(t);
     return t;
 }
@@ -68,7 +104,7 @@ const token_t *current_token(tokenizer_t *t)
 /*
  * _append_token - append a character to the tail of token's element
  */
-static void _append_token(token_t *token, const char *c)
+static void _append_token(token_t *token, const char c)
 {
     if (strlen(token->element < ELEMENT_MAX)) {
         strncat(token->element, c, 1);
@@ -94,38 +130,38 @@ static const token_t *_parse_word(tokenizer_t *t)
     case 'V': case 'W': case 'X': case 'Y': case 'Z': 
     case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
     case '*': case '+': case ',': case '-': case '.': case '/': case ':':
-    case: ';' case '?': case '@': case '[': case ']': case '&': case '\\':
+    case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
     case '^': case '_': case '`': case '{': case '|': case '}':
         t->token.spec = WORD;
         _append_token(&(t->token), &(t->c));
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         _parse_word(t);
         break;
     case '$':
         t->token.spec = ENV;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         _parse_env(t);
         break;
     case '~':
         t->token.spec = HOME;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         _parse_home(t);
         break;
     case '=':
-        t->token.spec = ENV_ASSIGN;
-        t->c = fgetc(t->input);
-        _parse_env_assign(t);
+        t->token.spec = ENV_ASSIGNMENT;
+        t->c = _getc(t->input);
+        _parse_env_assignment(t);
         break;
     case '<':
         next_token(t);
         t->token.spec = REDIRECT_IN;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         _parse_redirect_in(t);
         break;
     case '>':
         next_token(t);
         t->token.spec = REDIRECT_OUT;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         _parse_redirect_out(t);
         break;
     default: break;
@@ -144,7 +180,7 @@ static const token_t *_parse_num(tokenizer_t *t)
     case '7': case '8': case '9':
         t->token.spec = NUM;
         _append_token(&(t->token), &(t->c));
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         _parse_num(t);
         break;
     /*
@@ -165,14 +201,14 @@ static const token_t *_parse_num(tokenizer_t *t)
 }
 
 /*
- * _parse_num - Parse <env>
+ * _parse_env - Parse <env>
  */
 static const token_t *_parse_env(tokenizer_t *t)
 {
     switch (t->c) {
-    case "$":
+    case '$':
         t->token.spec = ENV;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         token_t *word = _parse_word(t);
         char *env_v = getenv(word->element);
         if (env_v) {
@@ -193,7 +229,7 @@ static const token_t *_parse_env(tokenizer_t *t)
 static const token_t *_parse_home(tokenizer_t *t)
 {
     switch (t->c) {
-    case "~":
+    case '~':
         t->token.spec = HOME;
         register struct passwd *pw;
         register uid_t uid;
@@ -219,13 +255,13 @@ static const token_t *_parse_home(tokenizer_t *t)
 /*
  * _parse_num - Parse <env_assignment>
  */
-static const token_t *_parser_env_assignment(tokenizer_t *t)
+static const token_t *_parse_env_assignment(tokenizer_t *t)
 {
     switch (t->c) {
     case '=':
         t->token.spec = ENV_ASSIGNMENT;
         _append_token(t->token.element, t->c);
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         _parse_word(t);
         break;
     default: break;
@@ -242,7 +278,7 @@ static const token_t *_parse_redirect_in(tokenizer_t *t)
     switch (t->c) {
     case '<':
         t->token.spec = REDIRECT_IN;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         // next_token(t);
         // _parse_word(t);
         break;
@@ -255,12 +291,12 @@ static const token_t *_parse_redirect_in(tokenizer_t *t)
 /*
  * _parse_redirect_out - Parse <redirect_out>
  */
-static token_t *_parse_redirect_out(tokenizer_t *t)
+static const token_t *_parse_redirect_out(tokenizer_t *t)
 {
     switch (t->c) {
     case '>':
         t->token.spec = REDIRECT_OUT;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         // next_token(t);
         // _parse_word(t);
         break;
@@ -288,9 +324,9 @@ const token_t *next_token(tokenizer_t *t)
 /*
  * _next_token - Real scanner.
  */
-const token_t  *_next_token(tokenizer_t *t)
+static const token_t  *_next_token(tokenizer_t *t)
 {
-    while (isspace(t->c)) t->c = fgetc(t->input);
+    while (isspace(t->c)) t->c = _getc(t->input);
     switch (t->c) {
     case EOF:
         t->token.spec = END_OF_FILE;
@@ -307,35 +343,35 @@ const token_t  *_next_token(tokenizer_t *t)
     case 'V': case 'W': case 'X': case 'Y': case 'Z': 
     case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
     case '*': case '+': case ',': case '-': case '.': case '/': case ':':
-    case: ';' case '?': case '@': case '[': case ']': case '&': case '\\':
-    case '^': case '_': case '`': case '{': case '|': case '}': 
+    case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
+    case '^': case '_': case '`': case '{': case '}': 
         t->token.spec = WORD;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         _parse_word(t);
         break;
     case '$':
         t->token.spec = ENV;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         _parse_env(t);
         break;
     case '~':
         t->token.spec = HOME;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         _parse_home(t);
         break;
     case '<':
         t->token.spec = REDIRECT_IN;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         _parse_redirect_in(t);
         break;
     case '>':
         t->token.spec = REDIRECT_OUT;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         _parse_redirect_out(t);
         break;
     case '|':
         t->token.spec = PIPED_COMMAND;
-        t->c = fgetc(t->input);
+        t->c = _getc(t->input);
         break;
     default: break;
     }
@@ -358,8 +394,8 @@ void syntax_error(tokenizer_t *t)
 static const token_t *eat_word(tokenizer_t *t)
 {
     token_t *word = current_token(t);
-    if (env->spec != WORD) syntax_error(t);
-    command_t current_command = t->command[t-p];
+    if (word->spec != WORD) syntax_error(t);
+    command_t current_command = t->command[t->p];
     if (!current_command.command_flag) {
         strncpy(current_command.cmd, word->element, ELEMENT_MAX);
     } else {
@@ -377,7 +413,7 @@ static const token_t *eat_env(tokenizer_t *t)
     token_t *env = current_token(t);
     // Environment variable will be converted into real value in environ.
     if (env->spec != WORD) syntax_error(t);
-    _next_token(t)
+    _next_token(t);
     return eat_word(t);
 }
 
@@ -387,7 +423,7 @@ static const token_t *eat_env(tokenizer_t *t)
 static const token_t *eat_env_assignment(tokenizer_t *t)
 {
     token_t *env = current_token(t);
-    if (env->spec != ENV_ASSIGNMENT) syntax_error();
+    if (env->spec != ENV_ASSIGNMENT) syntax_error(t);
     if (putenv(env->element) != 0) {
         fprintf(stderr, "putenv failed\n");
     }
@@ -427,7 +463,7 @@ static const token_t *eat_redirect_out(tokenizer_t *t)
     if (redirect_head->spec != REDIRECT_OUT) syntax_error(t);
     token_t *redirect_file = next_token(t);
     t->command[t->p].redirection[0].input = true;
-    strcpy(t->command[t->p].redirection[0].filename, reirect_file->element);
+    strcpy(t->command[t->p].redirection[0].filename, redirect_file->element);
     return redirect_file;
 }
 
@@ -451,8 +487,8 @@ static const token_t *eat_redirect_in(tokenizer_t *t)
     */
     if (redirect_head->spec != REDIRECT_IN) syntax_error(t);
     token_t *redirect_file = next_token(t);
-    t->command[t->p].redirection.[0]input = false;
-    strcpy(t->command[t->p].redirection[1].filename, reirect_file->element);
+    t->command[t->p].redirection[0].input = false;
+    strcpy(t->command[t->p].redirection[1].filename, redirect_file->element);
     return redirect_file;
 }
 
@@ -465,21 +501,21 @@ static const token_t *eat_redirection(tokenizer_t *t)
     if (redirect_head->spec != REDIRECT_IN
         && redirect_head->spec != REDIRECT_OUT)
         syntax_error(t);
-    switch (redirect_head->sepc) {
+    switch (redirect_head->spec) {
     case REDIRECT_IN:
         eat_redirect_in(t);
         break;
     case REDIRECT_OUT:
         eat_redirect_out(t);
         break;
-    
+    }
     return next_token(t);
 }
 
 /*
  * eat_command_element - Eat <command_element>
  */
-token_t *eat_command_element(tokenizer_t *t)
+static const token_t *eat_command_element(tokenizer_t *t)
 {
     token_t *command_element = current_token(t);
     switch (command_element->spec) {
@@ -489,11 +525,13 @@ token_t *eat_command_element(tokenizer_t *t)
     case ENV_ASSIGNMENT:
         eat_env_assignment(t);
         break;
-    case REDIRECTION_IN: case REDIRECTION_OUT:
+    case REDIRECT_IN: case REDIRECT_OUT:
         eat_redirection_list(t);
         break;
-    default: break
+    default: break;
     }
+    
+    return command_element;
 }
 
 /*
@@ -502,8 +540,8 @@ token_t *eat_command_element(tokenizer_t *t)
 static const token_t *eat_redirection_list(tokenizer_t *t)
 {
     token_t *redirection = current_token(t);
-    if (redirection->spec != REDIRECTION_IN &&
-        redirection->spec != REDIRECTION_OUT)
+    if (redirection->spec != REDIRECT_IN &&
+        redirection->spec != REDIRECT_OUT)
         syntax_error(t);
     eat_redirection(t);
     token_t *redirection_list = next_token(t);
@@ -517,19 +555,19 @@ static const token_t *eat_redirection_list(tokenizer_t *t)
  */
 static const token_t *eat_command(tokenizer_t *t)
 {
-    token_t *commane_element = current_token(t);
-    if (commane_element->spec != WORD &&
-        commane_element->spec != ENV_ASSIGNMENT &&
-        commane_element->spec != REDIRECTION_LIST)
+    token_t *command_element = current_token(t);
+    if (command_element->spec != WORD &&
+        command_element->spec != ENV_ASSIGNMENT &&
+        command_element->spec != REDIRECTION_LIST)
         syntax_error(t);
     eat_command_element(t);
     token_t *command = next_token(t);
-    if (commane_element->spec == WORD ||
-        commane_element->spec == ENV_ASSIGNMENT ||
-        commane_element->spec == REDIRECTION_IN ||
-        commane_element->spec == REDIRECTION_OUT)
+    if (command_element->spec == WORD ||
+        command_element->spec == ENV_ASSIGNMENT ||
+        command_element->spec == REDIRECT_IN ||
+        command_element->spec == REDIRECT_OUT)
         eat_command(t);
-
+    
     return command_element;
 }
 
@@ -555,7 +593,7 @@ static const token_t *eat_piped_command(tokenizer_t *t)
     
     return command;
 }
- 
+
 /**
  * parse input - Parse and set command information to command tables
  * @t: Token information and next character.
@@ -564,6 +602,3 @@ const token_t *parse_input(tokenizer_t *t)
 {
     return eat_piped_command(t);
 }
-
- 
- 
