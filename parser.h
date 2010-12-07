@@ -73,9 +73,9 @@ typedef struct command {
 
 typedef struct tokenizer {
     token_t token;
-    int c;
+    char c;
     int p; // the number of current pipe
-    char *input;
+    char input[INPUT_MAX];
     command_t command[PIPE_MAX];
 } tokenizer_t;
 
@@ -83,7 +83,7 @@ typedef struct tokenizer {
  * init_tokenizer - Initialize and set up scanninig from input.
  * @input: input from prompt
  */
-const tokenizer_t *init_tokenizer(const char *input);
+tokenizer_t *init_tokenizer(const char *input);
 
 /**
  * current_token - Get current token.
@@ -102,6 +102,12 @@ const token_t *next_token(tokenizer_t *t);
  * @t: Token information and next character.
  */
 void syntax_error(tokenizer_t *t);
+
+/**
+ * parse input - Parse and set command information to command tables
+ * @t: Token information and next character.
+ */
+const token_t *parse_input(tokenizer_t *t);
 
 #endif  // PSH_PARSER_H_
 
