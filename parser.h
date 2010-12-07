@@ -38,6 +38,7 @@ typedef enum {
     ENV_ASSIGNMENT,
     WORD,
     ERROR,
+    END_OF_LINE,
     END_OF_FILE
 } token_spec_t;
 

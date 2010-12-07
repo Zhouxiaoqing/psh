@@ -71,7 +71,7 @@ static void fork_chain(tokenizer_t *t, int i)
                 
                 // Input redirection
                 redirect_in = current_command.redirection[0];
-                if (redirect_in.filename != "" || 
+                if (strlen(redirect_in.filename) != 0 &&
                     redirect_in.input == true ) {
                     if (!freopen(redirect_in.filename, "r", stdin)) {
                         fprintf(stderr,
@@ -82,7 +82,7 @@ static void fork_chain(tokenizer_t *t, int i)
                 }
                 // Output redirection
                 redirect_out = current_command.redirection[1];
-                if (redirect_out.filename != "" || 
+                if (strlen(redirect_out.filename) != 0 &&
                     redirect_out.input == false ) {
                     if (!freopen(redirect_out.filename, "w", stdout)) {
                         fprintf(stderr,
@@ -95,7 +95,7 @@ static void fork_chain(tokenizer_t *t, int i)
                 execlp(current_command.cmd, current_command.cmd,
                        current_command.args,(char *) 0);
                 fork_chain(t, i+1);
-                exit(EXIT_FAILURE);
+                exit(EXIT_SUCCESS);
             } else {
                 waitpid(fork_result, (int *)0, WUNTRACED);
                 close(file_pipes[0]);
@@ -117,6 +117,7 @@ int main(int argc, char **argv)
         t = init_tokenizer(input);
         parse_input(t);
         fork_chain(t, 0);
+        printf("[0;32;40mpsh-$ [0;37;40m");
     }
-    exit(EXIT_FAILURE);
+    exit(EXIT_SUCCESS);
 }
