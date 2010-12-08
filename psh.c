@@ -16,7 +16,7 @@
 
 #include "parser.h"
 
-static char *logo[] = {
+static const char *logo[] = {
     "==========================\n",
     "                _         \n",
     "               | |        \n",
@@ -28,6 +28,11 @@ static char *logo[] = {
     "     |_|                  \n",
     "==========================\n",
 };
+
+static void dummy()
+{
+    int i = 0;
+}
 
 /*
  * say_hello - display greeting for user
@@ -48,18 +53,22 @@ static void fork_chain(tokenizer_t *t, int i)
     pid_t fork_result;
     
     command_t current_command;
+    command_t next_command;
     redirection_t redirect_in;
     redirection_t redirect_out;
 
     current_command = t->command[i];
+    if (i < PIPE_MAX)
+        next_command = t->command[i+1];
     if (i < t->p && strlen(current_command.cmd) != 0) {
         if (pipe(file_pipes) == 0) {
             fork_result = fork();
-            if (fork_result == (pid_t) -1) {
+            switch (fork_result) {
+            case -1:
                 fprintf(stderr, "Fork failure");
                 exit(EXIT_FAILURE);
-            }
-            if (fork_result == (pid_t) 0) {
+                break;
+            case 0:  // case of child
                 close(0);
                 dup(file_pipes[0]);
                 close(file_pipes[0]);
@@ -96,10 +105,12 @@ static void fork_chain(tokenizer_t *t, int i)
                        current_command.args,(char *) 0);
                 fork_chain(t, i+1);
                 exit(EXIT_SUCCESS);
-            } else {
-                waitpid(fork_result, (int *)0, WUNTRACED);
+                break;
+            default:  // case of parent
+                waitpid(fork_result, (int *) 0, WNOHANG);
                 close(file_pipes[0]);
                 close(file_pipes[1]); 
+                break;
             }
         }
     }
@@ -116,6 +127,7 @@ int main(int argc, char **argv)
     while (fgets(input, INPUT_MAX, stdin) != EOF) {
         t = init_tokenizer(input);
         parse_input(t);
+        dummy();
         fork_chain(t, 0);
         printf("[0;32;40mpsh-$ [0;37;40m");
     }
