@@ -69,12 +69,10 @@ static void fork_chain(tokenizer_t *t, int i)
                 exit(EXIT_FAILURE);
                 break;
             case 0:  // case of child
-                close(0);
-                dup(file_pipes[0]);
+                dup2(0, file_pipes[0]);
                 close(file_pipes[0]);
                 if (i + 1 < t->p) {
-                    close(1);
-                    dup(file_pipes[1]);
+                    dup2(1, file_pipes[1]);
                 }
                 close(file_pipes[1]);
                 

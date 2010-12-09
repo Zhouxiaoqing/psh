@@ -372,6 +372,8 @@ static const token_t  *_next_token(tokenizer_t *t)
         break;
     default: break;
     }
+    
+    return &(t->token);
 }
 
 /**
