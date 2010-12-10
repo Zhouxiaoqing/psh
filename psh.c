@@ -47,70 +47,82 @@ static void say_hello()
 /*
  * fork_chain - fork and exec while command exists and joint them with pipes
  */
-static void fork_chain(tokenizer_t *t, int i)
+static void _fork_chain(tokenizer_t *t, int i, int *pipes)
 {
-    int file_pipes[2];
-    pid_t fork_result;
+    int fork_pipes[2];
+    pid_t fork_result, child;
     
     command_t current_command;
-    command_t next_command;
-    redirection_t redirect_in;
-    redirection_t redirect_out;
-
-    current_command = t->command[i];
-    if (i < PIPE_MAX)
-        next_command = t->command[i+1];
-    if (i < t->p && strlen(current_command.cmd) != 0) {
-        if (pipe(file_pipes) == 0) {
-            fork_result = fork();
-            switch (fork_result) {
-            case -1:
-                fprintf(stderr, "Fork failure");
-                exit(EXIT_FAILURE);
-                break;
-            case 0:  // case of child
-                dup2(0, file_pipes[0]);
-                close(file_pipes[0]);
-                if (i + 1 < t->p) {
-                    dup2(1, file_pipes[1]);
-                }
-                close(file_pipes[1]);
-                
-                // Input redirection
-                redirect_in = current_command.redirection[0];
-                if (strlen(redirect_in.filename) != 0 &&
-                    redirect_in.input == true ) {
-                    if (!freopen(redirect_in.filename, "r", stdin)) {
-                        fprintf(stderr,
-                                "could not redirect stdin from file %s\n",
-                                redirect_in.filename);
-                        exit(2);
-                    }
-                }
-                // Output redirection
-                redirect_out = current_command.redirection[1];
-                if (strlen(redirect_out.filename) != 0 &&
-                    redirect_out.input == false ) {
-                    if (!freopen(redirect_out.filename, "w", stdout)) {
-                        fprintf(stderr,
-                                "could not redirect stdout from file %s\n",
-                                redirect_out.filename);
-                        exit(2);
-                    }
-                }
-                
-                execlp(current_command.cmd, current_command.cmd,
-                       current_command.args,(char *) 0);
-                fork_chain(t, i+1);
-                exit(EXIT_SUCCESS);
-                break;
-            default:  // case of parent
-                waitpid(fork_result, (int *) 0, WNOHANG);
-                close(file_pipes[0]);
-                close(file_pipes[1]); 
-                break;
+    redirection_t redirect_in, redirect_out;
+    
+    if (i > 0 && i <= t->p) {
+        current_command = t->command[i-1];
+        if (i > 1)
+            dup2(pipes[0], 0);
+        close(pipes[0]);
+        fork_result = fork();
+        switch (fork_result) {
+        case -1:
+            fprintf(stderr, "fork failure");
+            exit(EXIT_FAILURE);
+            break;
+        case 0:  // case of child
+            if (i >= 0 && i < t->p) {
+                dup2(pipes[1], 1);
+                close(pipes[1]);
             }
+            // Input redirection
+            redirect_in = current_command.redirection[0];
+            if (strlen(redirect_in.filename) != 0 &&
+                redirect_in.input == true ) {
+                if (!freopen(redirect_in.filename, "r", stdin)) {
+                    fprintf(stderr,
+                            "could not redirect stdin from file %s\n",
+                            redirect_in.filename);
+                    exit(2);
+                }
+            }
+            // Output redirection
+            redirect_out = current_command.redirection[1];
+            if (strlen(redirect_out.filename) != 0 &&
+                redirect_out.input == false ) {
+                if (!freopen(redirect_out.filename, "w", stdout)) {
+                    fprintf(stderr,
+                            "could not redirect stdout from file %s\n",
+                            redirect_out.filename);
+                    exit(2);
+                }
+            }
+            if (i > 1) {
+                if (pipe(fork_pipes) == 0) {
+                    _fork_chain(t, i-1, pipes);
+                } else {
+                    fprintf(stderr,
+                            "could not create pipes.\n");
+                        exit(2);
+                }
+            }
+            execlp(current_command.cmd, current_command.cmd,
+                   current_command.args,(char *) 0);
+            exit(EXIT_SUCCESS);
+            break;
+        default:  // case of parent
+            child = wait((int *) 0);
+            break;
         }
+    }
+}
+
+static void fork_chain(tokenizer_t *t)
+{
+    int pipes[2];
+    
+    if (pipe(pipes) == 0) {
+        _fork_chain(t, t->p, pipes);
+    } else {
+        fprintf(stderr,
+                "could not create pipes.\n");
+        exit(2);
     }
 }
     
@@ -126,7 +138,7 @@ int main(int argc, char **argv)
         t = init_tokenizer(input);
         parse_input(t);
         dummy();
-        fork_chain(t, 0);
+        fork_chain(t);
         printf("[0;32;40mpsh-$ [0;37;40m");
     }
     exit(EXIT_SUCCESS);
