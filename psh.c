@@ -1,5 +1,5 @@
 /*
- * psh.c - naive shell with recursive descendent parser
+ * psh.c - naive shell with recursive descent parser
  *
  * This source code is licensed under the MIT License.
  * See the file COPYING for more details.
@@ -10,8 +10,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
+#include <sys/types.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "parser.h"
@@ -29,11 +30,6 @@ static const char *logo[] = {
     "==========================\n",
 };
 
-static void dummy()
-{
-    int i = 0;
-}
-
 /*
  * say_hello - display greeting for user
  */
@@ -45,85 +41,96 @@ static void say_hello()
 }
 
 /*
- * fork_chain - fork and exec while command exists and joint them with pipes
+ * _set_redirections - set redirection
  */
-static void _fork_chain(tokenizer_t *t, int i, int *pipes)
+static void _set_redirections(command_t *current_command)
 {
-    int fork_pipes[2];
-    pid_t fork_result, child;
+    int i;
+    redirection_t redirection;
+    FILE *oldfile;
+    char *mode;
     
-    command_t current_command;
-    redirection_t redirect_in, redirect_out;
-    
-    if (i > 0 && i <= t->p) {
-        current_command = t->command[i-1];
-        if (i > 1)
-            dup2(pipes[0], 0);
-        close(pipes[0]);
-        fork_result = fork();
-        switch (fork_result) {
-        case -1:
-            fprintf(stderr, "fork failure");
-            exit(EXIT_FAILURE);
-            break;
-        case 0:  // case of child
-            if (i >= 0 && i < t->p) {
-                dup2(pipes[1], 1);
-                close(pipes[1]);
+    for (i = 0; i < ELEMENT_MAX; i++) {
+        redirection = current_command->redirection[i];
+        if (strlen(redirection.filename) != 0) {
+            switch (redirection.input) {
+            case true:
+                oldfile = stdin;
+                mode = "r";
+                break;
+            case false:
+                oldfile = stdout;
+                mode = "w";
+                break;
             }
-            // Input redirection
-            redirect_in = current_command.redirection[0];
-            if (strlen(redirect_in.filename) != 0 &&
-                redirect_in.input == true ) {
-                if (!freopen(redirect_in.filename, "r", stdin)) {
-                    fprintf(stderr,
-                            "could not redirect stdin from file %s\n",
-                            redirect_in.filename);
-                    exit(2);
-                }
+            if (!freopen(redirection.filename, mode, oldfile)) {
+                fprintf(stderr,
+                        "could not redirect stdin from file %s\n",
+                        redirection.filename);
+                exit(2);
             }
-            // Output redirection
-            redirect_out = current_command.redirection[1];
-            if (strlen(redirect_out.filename) != 0 &&
-                redirect_out.input == false ) {
-                if (!freopen(redirect_out.filename, "w", stdout)) {
-                    fprintf(stderr,
-                            "could not redirect stdout from file %s\n",
-                            redirect_out.filename);
-                    exit(2);
-                }
-            }
-            if (i > 1) {
-                if (pipe(fork_pipes) == 0) {
-                    _fork_chain(t, i-1, pipes);
-                } else {
-                    fprintf(stderr,
-                            "could not create pipes.\n");
-                        exit(2);
-                }
-            }
-            execlp(current_command.cmd, current_command.cmd,
-                   current_command.args,(char *) 0);
-            exit(EXIT_SUCCESS);
-            break;
-        default:  // case of parent
-            child = wait((int *) 0);
-            break;
         }
     }
 }
 
+/*
+ * fork_chain - fork and exec while command exists and joint them with pipes
+ */
+static int _fork_chain(tokenizer_t *t, int i, int prev_pipe_in)
+{
+    int next_pipe[2];
+    pid_t fork_result, child;
+    command_t current_command;
+
+    if (i >= 0 && i < t->p) {
+        if (pipe(next_pipe) == 0) {
+            current_command = t->command[i];
+            fork_result = fork();
+            switch (fork_result) {
+            case -1:
+                fprintf(stderr, "fork failure");
+                exit(EXIT_FAILURE);
+                break;
+            case 0:  // case of child
+                if (i > 0 && i <= t->p) {
+                    dup2(prev_pipe_in, 0);
+                    close(prev_pipe_in);
+                }
+                // redirection
+                _set_redirections(&(current_command));
+                // fork chain
+                
+                if (i + 1 < t->p && i >= 0 && i < t->p)
+                    dup2(next_pipe[1], 1);
+                close(next_pipe[1]);
+                // if (i == t->p)
+                    // freopen(, "w", stdout);
+                execlp(current_command.cmd, current_command.cmd,
+                       current_command.args, 0);
+                exit(EXIT_SUCCESS);
+                break;
+            default:  // case of parent
+                // if (i == 0)
+                child = wait((int *) 0);
+                break;
+            }
+        } else {
+            fprintf(stderr, "could not create pipe.\n");
+            exit(2);
+        }
+    }
+    
+    return next_pipe[0];
+}
+
 static void fork_chain(tokenizer_t *t)
 {
-    int pipes[2];
+    int i, prev_pipe_in;
     
-    if (pipe(pipes) == 0) {
-        _fork_chain(t, t->p, pipes);
-    } else {
-        fprintf(stderr,
-                "could not create pipes.\n");
-        exit(2);
+    for (i = 0; i < t->p; i++) {
+        prev_pipe_in = _fork_chain(t, i, prev_pipe_in);
     }
+    close(prev_pipe_in);
 }
     
 int main(int argc, char **argv)
@@ -133,13 +140,13 @@ int main(int argc, char **argv)
     char input[INPUT_MAX];
     
     say_hello();
-    printf("[0;32;40mpsh-$ [0;37;40m");
+    // printf("[0;32;40mpsh-$ [0;37;40m");
+    printf("[0;32mpsh-$ [0;37m");
     while (fgets(input, INPUT_MAX, stdin) != EOF) {
         t = init_tokenizer(input);
         parse_input(t);
-        dummy();
         fork_chain(t);
-        printf("[0;32;40mpsh-$ [0;37;40m");
+        printf("[0;32mpsh-$ [0;37m");
     }
     exit(EXIT_SUCCESS);
 }
