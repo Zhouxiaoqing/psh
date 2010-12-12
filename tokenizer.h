@@ -47,24 +47,10 @@ typedef struct token {
     char element[ELEMENT_MAX];
 } token_t;
 
-typedef struct redirection {
-    bool input;
-    char filename[ELEMENT_MAX];
-} redirection_t;
-
-typedef struct command {
-    char cmd[ELEMENT_MAX];
-    redirection_t redirection[ELEMENT_MAX];
-    char args[ARG_MAX];
-    bool command_flag;
-} command_t;
-
 typedef struct tokenizer {
     token_t token;
     char c;
-    int p; // the number of current pipe
     char input[INPUT_MAX];
-    command_t command[PIPE_MAX];
 } tokenizer_t;
 
 /**

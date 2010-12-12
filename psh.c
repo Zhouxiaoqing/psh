@@ -76,15 +76,15 @@ static void _set_redirections(command_t *current_command)
 /*
  * fork_chain - fork and exec while command exists and joint them with pipes
  */
-static int _fork_chain(tokenizer_t *t, int i, int prev_pipe_in)
+static int _fork_chain(parser_t *p, int i, int prev_pipe_in)
 {
     int next_pipe[2];
     pid_t fork_result, child;
     command_t current_command;
 
-    if (i >= 0 && i < t->p) {
+    if (i >= 0 && i < p->p) {
         if (pipe(next_pipe) == 0) {
-            current_command = t->command[i];
+            current_command = p->command[i];
             fork_result = fork();
             switch (fork_result) {
             case -1:
@@ -92,7 +92,7 @@ static int _fork_chain(tokenizer_t *t, int i, int prev_pipe_in)
                 exit(EXIT_FAILURE);
                 break;
             case 0:  // case of child
-                if (i > 0 && i <= t->p) {
+                if (i > 0 && i <= p->p) {
                     dup2(prev_pipe_in, 0);
                     close(prev_pipe_in);
                 }
@@ -100,7 +100,7 @@ static int _fork_chain(tokenizer_t *t, int i, int prev_pipe_in)
                 _set_redirections(&(current_command));
                 // fork chain
                 
-                if (i + 1 < t->p && i >= 0 && i < t->p)
+                if (i + 1 < p->p && i >= 0 && i < p->p)
                     dup2(next_pipe[1], 1);
                 close(next_pipe[1]);
                 // if (i == t->p)
@@ -123,12 +123,12 @@ static int _fork_chain(tokenizer_t *t, int i, int prev_pipe_in)
     return next_pipe[0];
 }
 
-static void fork_chain(tokenizer_t *t)
+static void fork_chain(parser_t *p)
 {
     int i, prev_pipe_in;
     
-    for (i = 0; i < t->p; i++) {
-        prev_pipe_in = _fork_chain(t, i, prev_pipe_in);
+    for (i = 0; i < p->p; i++) {
+        prev_pipe_in = _fork_chain(p, i, prev_pipe_in);
     }
     close(prev_pipe_in);
 }
@@ -137,6 +137,7 @@ int main(int argc, char **argv)
 {
     int i;
     tokenizer_t *t;
+    parser_t *p;
     char input[INPUT_MAX];
     
     say_hello();
@@ -144,8 +145,9 @@ int main(int argc, char **argv)
     printf("[0;32mpsh-$ [0;37m");
     while (fgets(input, INPUT_MAX, stdin) != EOF) {
         t = init_tokenizer(input);
-        parse_input(t);
-        fork_chain(t);
+        p = init_parser();
+        parse_input(p, t);
+        fork_chain(p);
         printf("[0;32mpsh-$ [0;37m");
     }
     exit(EXIT_SUCCESS);

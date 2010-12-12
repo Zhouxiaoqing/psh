@@ -58,9 +58,9 @@ tokenizer_t *init_tokenizer(const char *input)
     int i = 0;
     tokenizer_t *t = (tokenizer_t *) malloc(sizeof(tokenizer_t));
 
-    t->p = 0;
-    for (i = 0; i < PIPE_MAX; i++)
-        t->command[i].command_flag = false;
+    // t->p = 0;
+    // for (i = 0; i < PIPE_MAX; i++)
+    //     t->command[i].command_flag = false;
     strncpy(t->input, input, INPUT_MAX);
     // Read first character from input.
     t->c = _getc(t->input);
