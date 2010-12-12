@@ -20,13 +20,13 @@
 static inline const char _getc(char* input);
 static token_t *_init_token(tokenizer_t *t);
 static void _append_token(token_t *token, const char *c);
-static const token_t *_tokenize_word(tokenizer_t *t);
-static const token_t *_tokenize_num(tokenizer_t *t);
-static const token_t *_tokenize_env(tokenizer_t *t);
-static const token_t *_tokenize_home(tokenizer_t *t);
-static const token_t *_tokenize_env_assignment(tokenizer_t *t);
-static const token_t *_tokenize_redirect_in(tokenizer_t *t);
-static const token_t *_tokenize_redirect_out(tokenizer_t *t);
+static const token_t *_scan_word(tokenizer_t *t);
+static const token_t *_scan_num(tokenizer_t *t);
+static const token_t *_scan_env(tokenizer_t *t);
+static const token_t *_scan_home(tokenizer_t *t);
+static const token_t *_scan_env_assignment(tokenizer_t *t);
+static const token_t *_scan_redirect_in(tokenizer_t *t);
+static const token_t *_scan_redirect_out(tokenizer_t *t);
 // static const token_t *_next_token(tokenizer_t *t);
 
 /*
@@ -103,9 +103,9 @@ static void _append_token(token_t *token, const char *c)
 }
 
 /*
- * _tokenize_word - Parse <word>
+ * _scan_word - Parse <word>
  */
-static const token_t *_tokenize_word(tokenizer_t *t)
+static const token_t *_scan_word(tokenizer_t *t)
 {
     switch (t->c) {
     case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
@@ -122,29 +122,29 @@ static const token_t *_tokenize_word(tokenizer_t *t)
     case '^': case '_': case '`': case '{': case '|': case '}':
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
-        _tokenize_word(t);
+        _scan_word(t);
         break;
     case '$':
         t->c = _getc(t->input);
-        _tokenize_env(t);
+        _scan_env(t);
         break;
     case '~':
         t->c = _getc(t->input);
-        _tokenize_home(t);
+        _scan_home(t);
         break;
     case '=':
         t->c = _getc(t->input);
-        _tokenize_env_assignment(t);
+        _scan_env_assignment(t);
         break;
     case '<':
         next_token(t);
         t->c = _getc(t->input);
-        _tokenize_redirect_in(t);
+        _scan_redirect_in(t);
         break;
     case '>':
         next_token(t);
         t->c = _getc(t->input);
-        _tokenize_redirect_out(t);
+        _scan_redirect_out(t);
         break;
     default: break;
     }
@@ -153,9 +153,9 @@ static const token_t *_tokenize_word(tokenizer_t *t)
 }
 
 /*
- * _tokenize_num - Parse <num>
+ * _scan_num - Parse <num>
  */
-static const token_t *_tokenize_num(tokenizer_t *t)
+static const token_t *_scan_num(tokenizer_t *t)
 {
     switch (t->c) {
     case '0': case '1': case '2': case '3': case '4': case '5': case '6':
@@ -163,18 +163,18 @@ static const token_t *_tokenize_num(tokenizer_t *t)
         t->token.spec = NUM;
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
-        _tokenize_num(t);
+        _scan_num(t);
         break;
     /*
     case '<':
         next_token(t);
         t->token.spec = REDIRECT_IN;
-        _tokenize_redirect_in(t);
+        _scan_redirect_in(t);
         break;
     case '>':
         next_token(t);
         t->token.spec = REDIRECT_OUT;
-        _tokenize_redirect_out(t);
+        _scan_redirect_out(t);
         break;
     */
     default: break;
@@ -183,16 +183,16 @@ static const token_t *_tokenize_num(tokenizer_t *t)
 }
 
 /*
- * _tokenize_env - Parse <env>
+ * _scan_env - Parse <env>
  */
-static const token_t *_tokenize_env(tokenizer_t *t)
+static const token_t *_scan_env(tokenizer_t *t)
 {
     const token_t *word;
     switch (t->c) {
     case '$':
         t->token.spec = ENV;
         t->c = _getc(t->input);
-        word = _tokenize_word(t);
+        word = _scan_word(t);
         char *env_v = getenv(word->element);
         if (env_v) {
             t->token.spec = WORD;
@@ -207,9 +207,9 @@ static const token_t *_tokenize_env(tokenizer_t *t)
 }
 
 /*
- * _tokenize_home - Parse <home>
+ * _scan_home - Parse <home>
  */
-static const token_t *_tokenize_home(tokenizer_t *t)
+static const token_t *_scan_home(tokenizer_t *t)
 {
     switch (t->c) {
     case '~':
@@ -236,16 +236,16 @@ static const token_t *_tokenize_home(tokenizer_t *t)
 }
 
 /*
- * _tokenize_num - Parse <env_assignment>
+ * _scan_num - Parse <env_assignment>
  */
-static const token_t *_tokenize_env_assignment(tokenizer_t *t)
+static const token_t *_scan_env_assignment(tokenizer_t *t)
 {
     switch (t->c) {
     case '=':
         t->token.spec = ENV_ASSIGNMENT;
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
-        _tokenize_word(t);
+        _scan_word(t);
         break;
     default: break;
     }
@@ -254,16 +254,16 @@ static const token_t *_tokenize_env_assignment(tokenizer_t *t)
 }
 
 /*
- * _tokenize_redirect_in - Parse <redirect_in>
+ * _scan_redirect_in - Parse <redirect_in>
  */
-static const token_t *_tokenize_redirect_in(tokenizer_t *t)
+static const token_t *_scan_redirect_in(tokenizer_t *t)
 {
     switch (t->c) {
     case '<':
         t->token.spec = REDIRECT_IN;
         t->c = _getc(t->input);
         // next_token(t);
-        // _tokenize_word(t);
+        // _scan_word(t);
         break;
     default: break;
     }
@@ -272,16 +272,16 @@ static const token_t *_tokenize_redirect_in(tokenizer_t *t)
 }
 
 /*
- * _tokenize_redirect_out - Parse <redirect_out>
+ * _scan_redirect_out - Parse <redirect_out>
  */
-static const token_t *_tokenize_redirect_out(tokenizer_t *t)
+static const token_t *_scan_redirect_out(tokenizer_t *t)
 {
     switch (t->c) {
     case '>':
         t->token.spec = REDIRECT_OUT;
         t->c = _getc(t->input);
         // next_token(t);
-        // _tokenize_word(t);
+        // _scan_word(t);
         break;
     /*
     case '&':
@@ -333,27 +333,27 @@ const token_t  *_next_token(tokenizer_t *t)
     case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
     case '^': case '_': case '`': case '{': case '}': 
         t->token.spec = WORD;
-        _tokenize_word(t);
+        _scan_word(t);
         t->c = _getc(t->input);
         break;
     case '$':
         t->token.spec = ENV;
-        _tokenize_env(t);
+        _scan_env(t);
         t->c = _getc(t->input);
         break;
     case '~':
         t->token.spec = HOME;
-        _tokenize_home(t);
+        _scan_home(t);
         t->c = _getc(t->input);
         break;
     case '<':
         t->token.spec = REDIRECT_IN;
-        // _tokenize_redirect_in(t);
+        // _scan_redirect_in(t);
         t->c = _getc(t->input);
         break;
     case '>':
         t->token.spec = REDIRECT_OUT;
-        // _tokenize_redirect_out(t);
+        // _scan_redirect_out(t);
         t->c = _getc(t->input);
         break;
     case '|':
