@@ -125,27 +125,27 @@ static const token_t *_scan_word(tokenizer_t *t)
         _scan_word(t);
         break;
     case '$':
-        t->c = _getc(t->input);
         _scan_env(t);
+        t->c = _getc(t->input);
         break;
     case '~':
-        t->c = _getc(t->input);
         _scan_home(t);
+        t->c = _getc(t->input);
         break;
     case '=':
-        t->c = _getc(t->input);
         _scan_env_assignment(t);
-        break;
-    case '<':
-        next_token(t);
         t->c = _getc(t->input);
-        _scan_redirect_in(t);
         break;
-    case '>':
-        next_token(t);
-        t->c = _getc(t->input);
-        _scan_redirect_out(t);
-        break;
+/*     case '<': */
+/*         next_token(t); */
+/*         _scan_redirect_in(t); */
+/*         t->c = _getc(t->input); */
+/*         break; */
+/*     case '>': */
+/*         next_token(t); */
+/*         _scan_redirect_out(t); */
+/*         t->c = _getc(t->input); */
+/*         break; */
     default: break;
     }
     
@@ -211,22 +211,26 @@ static const token_t *_scan_env(tokenizer_t *t)
  */
 static const token_t *_scan_home(tokenizer_t *t)
 {
+    register struct passwd *pw;
+    register uid_t uid;
+    char *env_home;
+        
     switch (t->c) {
     case '~':
-        t->token.spec = HOME;
-        register struct passwd *pw;
-        register uid_t uid;
-        
-        uid = geteuid();
-        pw = getpwuid(uid);
-        if (pw) {
-            const char *homedir = "/home/";
-            strncpy(t->token.element, homedir, strlen(homedir));
-            strncat(t->token.element, pw->pw_name, strlen(pw->pw_name));
-            strncat(t->token.element, "/", 1);
+        env_home = getenv("HOME");
+        if (env_home) {
+            strncat(t->token.element, env_home, strlen(env_home));
         } else {
-            fprintf(stderr,"error: cannot find username for UID %u\n",
-                    (unsigned) uid);
+            uid = geteuid();
+            pw = getpwuid(uid);
+            if (pw) {
+                const char *homedir = "/home/";
+                strncat(t->token.element, homedir, strlen(homedir));
+                strncat(t->token.element, pw->pw_name, strlen(pw->pw_name));
+            } else {
+                fprintf(stderr,"error: cannot find username for UID %u\n",
+                        (unsigned) uid);
+            }
         }
         break;
     default: break;
@@ -344,7 +348,10 @@ const token_t  *_next_token(tokenizer_t *t)
     case '~':
         t->token.spec = HOME;
         _scan_home(t);
+        t->token.spec = WORD;
         t->c = _getc(t->input);
+        if (!isspace(t->c))
+            _next_token(t);
         break;
     case '<':
         t->token.spec = REDIRECT_IN;
