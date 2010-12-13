@@ -30,6 +30,11 @@ typedef struct parser {
 } parser_t;
 
 /**
+ * init_parser - Initialize parser and command tables.
+ */
+parser_t *init_parser(void);
+
+/**
  * syntax_error - Deal with syntax error of input.
  * @p: Parser and command tables
  * @t: Token information and next character.

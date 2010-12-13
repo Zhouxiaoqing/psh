@@ -33,7 +33,7 @@ static const token_t *_parse_piped_command(parser_t *p, tokenizer_t *t);
 /**
  * init_parsr - Initialize parser and command tables.
  */
-parser_t *init_parser()
+parser_t *init_parser(void)
 {
     int i = 0;
     parser_t *p = (parser_t *) malloc(sizeof(parser_t));
