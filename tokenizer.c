@@ -119,17 +119,13 @@ static const token_t *_scan_word(tokenizer_t *t)
     case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
     case '*': case '+': case ',': case '-': case '.': case '/': case ':':
     case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
-    case '^': case '_': case '`': case '{': case '|': case '}':
+    case '^': case '_': case '`': case '{': case '|': case '}': case '~':
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
         _scan_word(t);
         break;
     case '$':
         _scan_env(t);
-        t->c = _getc(t->input);
-        break;
-    case '~':
-        _scan_home(t);
         t->c = _getc(t->input);
         break;
     case '=':
