@@ -52,12 +52,12 @@ Shell input syntax in BNF
         <special> ::= '!' | '"' | '#' | '%' | ''' | '(' | ')' | '*' | '+' | ',' 
                     | '-' | '.' | '/' | ':' | ';" | '?' | '@' | '[' | ']' | '&' 
                     | '\' | '^' | '_' | '`' | '{' | '|' | '}' 
-        <home> ::= '~'
+        <home> ::= '~' <word>
         <env> ::= '$' { '{' } <word> { '}' }
         <num> ::= <digit> | <digit> { <num> }
         <env_assignment> ::= <word> '=' <word>
         <word> ::= <env>
-                 | (<alpha> | <digit> | <special> | <home>) { <word> }
+                 | (<alpha> | <digit> | <special>) { <word> | <home> }
         
 
 Copyright
