@@ -145,20 +145,6 @@ static const token_t *_parse_redirect_in(parser_t *p, tokenizer_t *t)
 /*
  * _parse_redirect_out - Eat <redirect_out>
  */
-/* static const token_t *_parse_home(parser_t *p, tokenizer_t *t) */
-/* { */
-/*     const token_t *home; */
-    
-/*     home = current_token(t); */
-/*     if (home->spec != HOME) syntax_error(p, t); */
-/*     // Convert `~` into home directory */
-
-/*     return _next_token(t); */
-/* } */
-
-/*
- * _parse_redirect_out - Eat <redirect_out>
- */
 static const token_t *_parse_redirect_out(parser_t *p, tokenizer_t *t)
 {
     const token_t *redirect_head;

@@ -98,19 +98,14 @@ static int _fork_chain(parser_t *p, int i, int prev_pipe_in)
                 }
                 // redirection
                 _set_redirections(&(current_command));
-                // fork chain
-                
                 if (i + 1 < p->p && i >= 0 && i < p->p)
                     dup2(next_pipe[1], 1);
                 close(next_pipe[1]);
-                // if (i == t->p)
-                    // freopen(, "w", stdout);
                 execlp(current_command.cmd, current_command.cmd,
                        current_command.args, 0);
                 exit(EXIT_SUCCESS);
                 break;
             default:  // case of parent
-                // if (i == 0)
                 child = wait((int *) 0);
                 break;
             }
@@ -141,7 +136,6 @@ int main(int argc, char **argv)
     char input[INPUT_MAX];
     
     say_hello();
-    // printf("[0;32;40mpsh-$ [0;37;40m");
     printf("[0;32mpsh-$ [0;37m");
     while (fgets(input, INPUT_MAX, stdin) != EOF) {
         t = init_tokenizer(input);
