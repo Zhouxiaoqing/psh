@@ -196,11 +196,12 @@ static const token_t *__scan_env(tokenizer_t *t, char *key)
 
     switch (t->c) {
     case '$':
-        t->token.spec = ENV;
+        t->token.spec = WORD;
         t->c = _getc(t->input);
         __scan_env(t, key);
         break;
     case '{':
+        t->token.spec = ENV;
         t->c = _getc(t->input);
         __scan_env(t, key);
         break;
@@ -222,8 +223,13 @@ static const token_t *__scan_env(tokenizer_t *t, char *key)
         t->c = _getc(t->input);
         __scan_env(t, key);
         break;
-    case '}': default:
-        if (t->token.spec == ENV) {
+    case '}': 
+        if (t->token.spec != ENV) {
+            strncat(t->token.element, key, strlen(key));
+            t->c = _getc(t->input);
+            __scan_env(t, key);
+        } else {
+        default:
             t->token.spec = WORD;
             char *value = getenv(key);
             if (value)
@@ -231,8 +237,7 @@ static const token_t *__scan_env(tokenizer_t *t, char *key)
             if (t->c != '/')
                 t->c = _getc(t->input);
             _scan_word(t);
-        } else {
-            strncat(t->token.element, key, strlen(key));
+            break;
         }
         break;
     }
@@ -246,6 +251,7 @@ static const token_t *__scan_env(tokenizer_t *t, char *key)
 static const token_t *_scan_env(tokenizer_t *t)
 {
     char c[ELEMENT_MAX];
+    memset(c, 0, ELEMENT_MAX);
         
     return __scan_env(t, c);
 }
