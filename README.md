@@ -57,7 +57,7 @@ Shell input syntax in BNF
         <num> ::= <digit> | <digit> { <num> }
         <env_assignment> ::= <word> '=' <word>
         <word> ::= <env>
-                 | (<alpha> | <digit> | <special>) { <word> | <home> }
+                 | (<alphanum> | <special>) { <word> | <home> }
         
 
 Copyright

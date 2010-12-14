@@ -18,7 +18,7 @@
 #include "parser.h"
 
 static inline const char _getc(char* input);
-static token_t *_init_token(tokenizer_t *t);
+static token_t *_init_token(token_t *t);
 static void _append_token(token_t *token, const char *c);
 static const token_t *_scan_word(tokenizer_t *t);
 static const token_t *_scan_num(tokenizer_t *t);
@@ -69,15 +69,16 @@ tokenizer_t *init_tokenizer(const char *input)
     
     return t;
 }
+
 /*
  * _init_token - Initialize token
  */
-static token_t *_init_token(tokenizer_t *t)
+static token_t *_init_token(token_t *t)
 {
-    t->token.spec = ERROR;
-    memset((void *) t->token.element, '\0', sizeof(char) * ELEMENT_MAX);
+    t->spec = ERROR;
+    memset((void *) t->element, '\0', sizeof(char) * ELEMENT_MAX);
     
-    return &(t->token);
+    return t;
 }
 
 /**
@@ -158,48 +159,95 @@ static const token_t *_scan_num(tokenizer_t *t)
     case '7': case '8': case '9':
         t->token.spec = NUM;
         _append_token(&(t->token), &(t->c));
-        t->c = _getc(t->input);
         _scan_num(t);
+        t->c = _getc(t->input);
         break;
-    /*
-    case '<':
-        next_token(t);
-        t->token.spec = REDIRECT_IN;
-        _scan_redirect_in(t);
+    case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
+    case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
+    case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
+    case 'v': case 'w': case 'x': case 'y': case 'z': 
+    case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
+    case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
+    case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
+    case 'V': case 'W': case 'X': case 'Y': case 'Z': 
+    case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
+    case '*': case '+': case ',': case '-': case '.': case '/': case ':':
+    case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
+    case '^': case '_': case '`': case '{': case '}': case '~':
+        t->token.spec = WORD;
+        _scan_word(t);
+        t->c = _getc(t->input);
         break;
-    case '>':
-        next_token(t);
-        t->token.spec = REDIRECT_OUT;
-        _scan_redirect_out(t);
-        break;
-    */
+    case '$':
+        t->token.spec = ENV;
+        _scan_env(t);
+        t->c = _getc(t->input);
     default: break;
     }
     return &(t->token);
 }
 
 /*
- * _scan_env - Parse <env>
+ * __scan_env - real scanner for <env>
  */
-static const token_t *_scan_env(tokenizer_t *t)
+static const token_t *__scan_env(tokenizer_t *t, char *key)
 {
     const token_t *word;
+
     switch (t->c) {
     case '$':
         t->token.spec = ENV;
         t->c = _getc(t->input);
-        word = _scan_word(t);
-        char *env_v = getenv(word->element);
-        if (env_v) {
+        __scan_env(t, key);
+        break;
+    case '{':
+        t->c = _getc(t->input);
+        __scan_env(t, key);
+        break;
+    case '0': case '1': case '2': case '3': case '4': case '5': case '6':
+    case '7': case '8': case '9':
+    case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
+    case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
+    case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
+    case 'v': case 'w': case 'x': case 'y': case 'z': 
+    case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
+    case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
+    case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
+    case 'V': case 'W': case 'X': case 'Y': case 'Z': 
+    case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
+    case '*': case '+': case ',': case '-': case '.': /* case '/': */case ':':
+    case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
+    case '^': case '_': case '`': /* case '{':  case '}': */
+        strncat(key, &(t->c), 1);
+        t->c = _getc(t->input);
+        __scan_env(t, key);
+        break;
+    case '}': default:
+        if (t->token.spec == ENV) {
             t->token.spec = WORD;
-            strncat(t->token.element, env_v, strlen(env_v));
+            char *value = getenv(key);
+            if (value)
+                strncat(t->token.element, value, strlen(value));
+            if (t->c != '/')
+                t->c = _getc(t->input);
+            _scan_word(t);
         } else {
-            t->token.spec = WORD;
+            strncat(t->token.element, key, strlen(key));
         }
-    default: break;
+        break;
     }
     
     return &(t->token);
+}
+
+/*
+ * _scan_env - Scan <env>
+ */
+static const token_t *_scan_env(tokenizer_t *t)
+{
+    char c[ELEMENT_MAX];
+        
+    return __scan_env(t, c);
 }
 
 /*
@@ -300,7 +348,7 @@ static const token_t *_scan_redirect_out(tokenizer_t *t)
  */
 const token_t *next_token(tokenizer_t *t)
 {
-    _init_token(t);
+    _init_token(&(t->token));
     return _next_token(t);
 }
 
@@ -320,6 +368,10 @@ const token_t  *_next_token(tokenizer_t *t)
         break;
     case '0': case '1': case '2': case '3': case '4': case '5': case '6':
     case '7': case '8': case '9':
+        t->token.spec = NUM;
+        _scan_num(t);
+        t->c = _getc(t->input);
+        break;
     case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
     case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
     case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':

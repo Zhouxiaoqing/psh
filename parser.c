@@ -40,11 +40,6 @@ parser_t *init_parser(void)
     p->p = 0;
     for (i = 0; i < PIPE_MAX; i++)
         p->command[i].command_flag = false;
-    // strncpy(t->input, input, INPUT_MAX);
-    // Read first character from input.
-    // t->c = _getc(t->input);
-    // _append_token(&(t->token), &(t->c));
-    // next_token(t);
     
     return p;
 }
@@ -278,11 +273,11 @@ static const token_t *_parse_command(parser_t *p, tokenizer_t *t)
 static const token_t *_parse_piped_command(parser_t *p, tokenizer_t *t)
 {
     const token_t *command;
-    const token_t *pipe;
+    const token_t *_pipe;
 
     command = current_token(t);
     // Eat command and bind it to 
-    pipe = _parse_command(p, t);
+    _pipe = _parse_command(p, t);
     if (p->p <= PIPE_MAX) {
         p->p++;
     } else {
@@ -290,7 +285,7 @@ static const token_t *_parse_piped_command(parser_t *p, tokenizer_t *t)
         exit(-1);
     }
 
-    if (pipe->spec == PIPED_COMMAND) {
+    if (_pipe->spec == PIPED_COMMAND) {
         next_token(t);
         _parse_piped_command(p, t);
     }
