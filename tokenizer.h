@@ -13,10 +13,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
-#define PIPE_MAX  8
-#define ELEMENT_MAX  256
-#define ARG_MAX  4096
-#define INPUT_MAX (4096*4)
+#include "consts.h"
 
 typedef enum {
     PIPED_COMMAND,

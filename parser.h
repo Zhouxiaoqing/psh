@@ -10,6 +10,7 @@
 #ifndef PSH_PARSER_H_
 #define PSH_PARSER_H_
 
+#include "consts.h"
 #include "tokenizer.h"
 
 typedef struct redirection {
