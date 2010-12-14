@@ -109,6 +109,8 @@ static void _append_token(token_t *token, const char *c)
 static const token_t *_scan_word(tokenizer_t *t)
 {
     switch (t->c) {
+    case '0': case '1': case '2': case '3': case '4': case '5': case '6':
+    case '7': case '8': case '9':
     case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
     case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
     case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
@@ -133,16 +135,6 @@ static const token_t *_scan_word(tokenizer_t *t)
         _scan_env_assignment(t);
         t->c = _getc(t->input);
         break;
-/*     case '<': */
-/*         next_token(t); */
-/*         _scan_redirect_in(t); */
-/*         t->c = _getc(t->input); */
-/*         break; */
-/*     case '>': */
-/*         next_token(t); */
-/*         _scan_redirect_out(t); */
-/*         t->c = _getc(t->input); */
-/*         break; */
     default: break;
     }
     
@@ -182,6 +174,7 @@ static const token_t *_scan_num(tokenizer_t *t)
         t->token.spec = ENV;
         _scan_env(t);
         t->c = _getc(t->input);
+        break;
     default: break;
     }
     return &(t->token);
@@ -315,9 +308,6 @@ static const token_t *_scan_redirect_in(tokenizer_t *t)
     switch (t->c) {
     case '<':
         t->token.spec = REDIRECT_IN;
-        t->c = _getc(t->input);
-        // next_token(t);
-        // _scan_word(t);
         break;
     default: break;
     }
@@ -333,15 +323,7 @@ static const token_t *_scan_redirect_out(tokenizer_t *t)
     switch (t->c) {
     case '>':
         t->token.spec = REDIRECT_OUT;
-        t->c = _getc(t->input);
-        // next_token(t);
-        // _scan_word(t);
         break;
-    /*
-    case '&':
-        // Composite multi-descriptor
-        break;
-    */
     default: break;
     }
     
@@ -409,12 +391,12 @@ const token_t  *_next_token(tokenizer_t *t)
         break;
     case '<':
         t->token.spec = REDIRECT_IN;
-        // _scan_redirect_in(t);
+        _scan_redirect_in(t);
         t->c = _getc(t->input);
         break;
     case '>':
         t->token.spec = REDIRECT_OUT;
-        // _scan_redirect_out(t);
+        _scan_redirect_out(t);
         t->c = _getc(t->input);
         break;
     case '|':

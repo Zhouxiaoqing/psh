@@ -1,5 +1,5 @@
 /*
- * consts.h - varial constants
+ * consts.h - various constants
  *
  * This source code is licensed under the MIT License.
  * See the file COPYING for more details.
