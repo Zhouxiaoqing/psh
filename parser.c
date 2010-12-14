@@ -57,7 +57,7 @@ void syntax_error(parser_t *p, tokenizer_t *t)
 }
 
 /*
- * _parse_word - Eat <word>
+ * _parse_word - Parse <word>
  */
 static const token_t *_parse_word(parser_t *p, tokenizer_t *t)
 {
@@ -80,7 +80,7 @@ static const token_t *_parse_word(parser_t *p, tokenizer_t *t)
 }
 
 /*
- * _parse_env - Eat <env>
+ * _parse_env - Parse <env>
  */
 static const token_t *_parse_env(parser_t *p, tokenizer_t *t)
 {
@@ -95,7 +95,7 @@ static const token_t *_parse_env(parser_t *p, tokenizer_t *t)
 }
 
 /*
- * _parse_env_assignment - Eat <env_assignment>
+ * _parse_env_assignment - Parse <env_assignment>
  */
 static const token_t *_parse_env_assignment(parser_t *p, tokenizer_t *t)
 {
@@ -116,7 +116,7 @@ static const token_t *_parse_env_assignment(parser_t *p, tokenizer_t *t)
 }
 
 /*
- * _parse_redirect_in - Eat <redirect_in>
+ * _parse_redirect_in - Parse <redirect_in>
  */
 static const token_t *_parse_redirect_in(parser_t *p, tokenizer_t *t)
 {
@@ -143,7 +143,7 @@ static const token_t *_parse_redirect_in(parser_t *p, tokenizer_t *t)
 }
 
 /*
- * _parse_redirect_out - Eat <redirect_out>
+ * _parse_redirect_out - Parse <redirect_out>
  */
 static const token_t *_parse_redirect_out(parser_t *p, tokenizer_t *t)
 {
@@ -170,7 +170,7 @@ static const token_t *_parse_redirect_out(parser_t *p, tokenizer_t *t)
 }
 
 /*
- * _parse_redirection - Eat <redirection>
+ * _parse_redirection - Parse <redirection>
  */
 static const token_t *_parse_redirection(parser_t *p, tokenizer_t *t)
 {
@@ -192,7 +192,7 @@ static const token_t *_parse_redirection(parser_t *p, tokenizer_t *t)
 }
 
 /*
- * _parse_redirection_list - Eat <redirection_list>
+ * _parse_redirection_list - Parse <redirection_list>
  */
 static const token_t *_parse_redirection_list(parser_t *p, tokenizer_t *t)
 {
@@ -211,7 +211,7 @@ static const token_t *_parse_redirection_list(parser_t *p, tokenizer_t *t)
 }
 
 /*
- * _parse_command_element - Eat <command_element>
+ * _parse_command_element - Parse <command_element>
  */
 static const token_t *_parse_command_element(parser_t *p, tokenizer_t *t)
 {
@@ -235,7 +235,7 @@ static const token_t *_parse_command_element(parser_t *p, tokenizer_t *t)
 }
 
 /*
- * _parse_command - Eat <command> and make pipe.
+ * _parse_command - Parse <command> and make pipe.
  */
 static const token_t *_parse_command(parser_t *p, tokenizer_t *t)
 {
@@ -254,7 +254,7 @@ static const token_t *_parse_command(parser_t *p, tokenizer_t *t)
 }
 
 /*
- * _parse_piped_command - Eat <piped_command>
+ * _parse_piped_command - Parse <piped_command>
  */
 static const token_t *_parse_piped_command(parser_t *p, tokenizer_t *t)
 {
@@ -262,7 +262,7 @@ static const token_t *_parse_piped_command(parser_t *p, tokenizer_t *t)
     const token_t *_pipe;
 
     command = current_token(t);
-    // Eat command and bind it to 
+    // Parse command and bind it to 
     _pipe = _parse_command(p, t);
     if (p->p <= PIPE_MAX) {
         p->p++;

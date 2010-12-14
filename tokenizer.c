@@ -97,7 +97,7 @@ static void _append_token(token_t *token, const char *c)
 }
 
 /*
- * _scan_word - Parse <word>
+ * _scan_word - Scan <word>
  */
 static const token_t *_scan_word(tokenizer_t *t)
 {
@@ -135,7 +135,7 @@ static const token_t *_scan_word(tokenizer_t *t)
 }
 
 /*
- * _scan_num - Parse <num>
+ * _scan_num - Scan <num>
  */
 static const token_t *_scan_num(tokenizer_t *t)
 {
@@ -243,7 +243,7 @@ static const token_t *_scan_env(tokenizer_t *t)
 }
 
 /*
- * _scan_home - Parse <home>
+ * _scan_home - Scan <home>
  */
 static const token_t *_scan_home(tokenizer_t *t)
 {
@@ -276,7 +276,7 @@ static const token_t *_scan_home(tokenizer_t *t)
 }
 
 /*
- * _scan_num - Parse <env_assignment>
+ * _scan_num - Scan <env_assignment>
  */
 static const token_t *_scan_env_assignment(tokenizer_t *t)
 {
@@ -294,7 +294,7 @@ static const token_t *_scan_env_assignment(tokenizer_t *t)
 }
 
 /*
- * _scan_redirect_in - Parse <redirect_in>
+ * _scan_redirect_in - Scan <redirect_in>
  */
 static const token_t *_scan_redirect_in(tokenizer_t *t)
 {
@@ -309,7 +309,7 @@ static const token_t *_scan_redirect_in(tokenizer_t *t)
 }
 
 /*
- * _scan_redirect_out - Parse <redirect_out>
+ * _scan_redirect_out - Scan <redirect_out>
  */
 static const token_t *_scan_redirect_out(tokenizer_t *t)
 {
