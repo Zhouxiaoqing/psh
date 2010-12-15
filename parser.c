@@ -99,20 +99,14 @@ static const token_t *_parse_env(parser_t *p, tokenizer_t *t)
  */
 static const token_t *_parse_env_assignment(parser_t *p, tokenizer_t *t)
 {
-    const token_t *key, *assign, *value;
+    const token_t *env;
     
-    key = current_token(t);
-    if (key->spec != WORD) syntax_error(p, t);
-    assign = next_token(t);
-    if (assign->spec !=ENV_ASSIGNMENT) syntax_error(p, t);
-    value = next_token(t);
-    if (assign->spec !=WORD) syntax_error(p, t);
-    
-    if (putenv(value->element) != 0) {
+    env = current_token(t);
+    if (putenv((char *)env->element) != 0) {
         fprintf(stderr, "putenv failed\n");
     }
     
-    return value;
+    return env;
 }
 
 /*

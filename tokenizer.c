@@ -122,11 +122,11 @@ static const token_t *_scan_word(tokenizer_t *t)
         break;
     case '$':
         _scan_env(t);
-        t->c = _getc(t->input);
+        // t->c = _getc(t->input);
         break;
     case '=':
         _scan_env_assignment(t);
-        t->c = _getc(t->input);
+        // t->c = _getc(t->input);
         break;
     default: break;
     }
@@ -216,10 +216,11 @@ static const token_t *__scan_env(tokenizer_t *t, char *key)
             __scan_env(t, key);
         } else {
         default:
-            t->token.spec = WORD;
-            char *value = getenv(key);
-            if (value)
-                strncat(t->token.element, value, strlen(value));
+            // t->token.spec = WORD;
+            // char *value = getenv(key);
+            // if (value)
+            //     strncat(t->token.element, value, strlen(value));
+            strncat(t->token.element, value, strlen(value));
             if (t->c != '/')
                 t->c = _getc(t->input);
             _scan_word(t);
@@ -286,6 +287,7 @@ static const token_t *_scan_env_assignment(tokenizer_t *t)
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
         _scan_word(t);
+        // t->c = _getc(t->input);
         break;
     default: break;
     }
