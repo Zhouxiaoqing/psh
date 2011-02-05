@@ -12,23 +12,25 @@
 
 #include "consts.h"
 #include "tokenizer.h"
+#include "tree.h"
 
-typedef struct redirection {
-    bool input;
-    char src[ELEMENT_MAX];
-    char dst[ELEMENT_MAX];
-} redirection_t;
+/* typedef struct redirection { */
+/*     bool input; */
+/*     char src[ELEMENT_MAX]; */
+/*     char dst[ELEMENT_MAX]; */
+/* } redirection_t; */
 
-typedef struct command {
-    char cmd[ELEMENT_MAX];
-    redirection_t redirection[ELEMENT_MAX];
-    char args[ARG_MAX];
-    bool command_flag;
-} command_t;
+/* typedef struct command { */
+/*     char cmd[ELEMENT_MAX]; */
+/*     redirection_t redirection[ELEMENT_MAX]; */
+/*     char args[ARG_MAX]; */
+/*     bool command_flag; */
+/* } command_t; */
 
 typedef struct parser {
-    int p; // the number of current pipe
-    command_t command[PIPE_MAX];
+    node_t *root;
+    // int p;  // the number of current pipe
+    // command_t command[PIPE_MAX];
 } parser_t;
 
 /*
@@ -42,16 +44,41 @@ static inline const bool _is_num(const token_t *t)
 /*
  * _is_alpha - chech whether token is <alpha>
  */
-static inline const bool _is_alpha(const token_t *t)
+static inline const bool _is_alphanum(const token_t *t)
 {
-    return (t->spec == ALPHA) ? true : false;
+    return (_is_num(t) || t->spec == ALPHANUM) ? true : false;
 }
+
+/*
+ * _is_letter - chech whether token is <letter>
+ */
+static inline const bool _is_letter(const token_t *t)
+{
+    return (_is_alphanum(t) || t->spec == LETTER) ? true : false;
+}
+
+/*
+ * _is_word - chech whether token is <word>
+ */
+static inline const bool _is_env(const token_t *t)
+{
+    return (t->spec == ENV) ? true : false;
+}
+
+/*
+ * _is_home - chech whether token is <home>
+ */
+static inline const bool _is_home(const token_t *t)
+{
+    return (t->spec == HOME) ? true : false;
+}
+
 /*
  * _is_word - chech whether token is <word>
  */
 static inline const bool _is_word(const token_t *t)
 {
-    return (t->spec == WORD) ? true : false;
+    return (_is_env(t) || _is_letter(t) || _is_home(t)) ? true : false;
 }
 
 /*
@@ -67,7 +94,8 @@ static inline const bool _is_redirect_in(const token_t *t)
  */
 static inline const bool _is_redirect_out(const token_t *t)
 {
-    return (t->spec == REDIRECT_OUT) ? true : false;
+    return (t->spec == REDIRECT_OUT ||
+            t->spec == REDIRECT_OUT_APPEND) ? true : false;
 }
 
 /*
@@ -79,14 +107,45 @@ static inline const bool _is_redirection(const token_t *t)
 }
 
 /*
+ * _is_redirection_list - chech whether token is <redirection_list>
+ */
+static inline const bool _is_redirection_list(const token_t *t)
+{
+    return (_is_redirection(t)) ? true : false;
+}
+
+/*
+ * _is_env_assignment - chech whether token is <env_assignment>
+ */
+static inline const bool _is_env_assignment(const token_t *t)
+{
+    return (t->spec == ENV_ASSIGNMENT) ? true : false;
+}
+
+/*
  * _is_command_element - chech whether token is <command_element>
  */
 static inline const bool _is_command_element(const token_t *t)
 {
-    return (t->spec == WORD ||
-            t->spec == ENV_ASSIGNMENT || 
-            t->spec == REDIRECT_IN || 
-            t->spec == REDIRECT_OUT) ? true : false;
+    return (_is_word(t) ||
+            _is_env_assignment(t) ||
+            _is_redirection(t)) ? true : false;
+}
+
+/*
+ * _is_command - chech whether token is <command>
+ */
+static inline const bool _is_command(const token_t *t)
+{
+    return (_is_command_element(t)) ? true : false;
+}
+
+/*
+ * _is_piped_command - chech whether token is <piped_command>
+ */
+static inline const bool _is_piped_command(const token_t *t)
+{
+    return (_is_command(t)) ? true : false;
 }
 
 /**
@@ -106,6 +165,6 @@ void syntax_error(parser_t *p, tokenizer_t *t);
  * @p: Parser and command tables
  * @t: Token information and next character.
  */
-const token_t *parse_input(parser_t *p, tokenizer_t *t);
+const node_t *parse_input(parser_t *p, tokenizer_t *t);
 
 #endif  // PSH_PARSER_H_

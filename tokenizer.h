@@ -23,6 +23,7 @@ typedef enum {
     REDIRECT_IN_COMPOSITION,
     REDIRECT_OUT,
     REDIRECT_OUT_APPEND,
+    REDIRECT_OUT_COMPOSITION,
     REDIRECTION,
     REDIRECTION_LIST,
     COMMAND_ELEMENT,
@@ -44,6 +45,7 @@ typedef enum {
 typedef struct token {
     token_spec_t spec;
     char element[ELEMENT_MAX];
+    // char *element;
 } token_t;
 
 typedef struct tokenizer {
