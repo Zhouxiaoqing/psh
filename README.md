@@ -32,9 +32,10 @@ Shell input syntax in BNF
 
         <piped_commands> ::= <command> { '|' <piped_commands> }
         <command> ::= <command_element> { <command> }
-        <redirect_in> ::=  '<' { '&' } <word>
-        <redirect_out> ::= '>' { ('>' | '&') } <word>
-        <redirection> ::=  { <num> } (<redirect_in> | <redirect_out>)
+        <redirect_in> ::=  { <num> } '<' { '&' } <word>
+        <redirect_out> ::= { <num> } '>' { ('>' | '&') } <word>
+        <redirection> ::= <redirect_in>
+                        | <redirect_out>
         <redirection_list> ::= <redirection> { <redirection_list> } 
         <command_element> ::= <word>
                             | <env_assignment>
@@ -55,7 +56,7 @@ Shell input syntax in BNF
         <home> ::= '~' <alphanum>
         <env> ::= '$' { '{' } <word> { '}' }
         <num> ::= <digit> { <num> }
-        <env_assignment> ::= <word> '=' <word>
+        <env_assignment> ::= '=' <word>
         <letter> ::= (<alphanum> | <special>) { <letter> }
         
 
