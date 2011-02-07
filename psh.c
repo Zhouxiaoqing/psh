@@ -15,6 +15,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "consts.h"
 #include "executor.h"
 
 static const char *logo[] = {
@@ -42,19 +43,18 @@ static void say_hello()
     
 int main(int argc, char **argv)
 {
-    int i;
     tokenizer_t *t;
     parser_t *p;
-    node_t *root;
+    const node_t *root;
     char input[INPUT_MAX];
     
     say_hello();
     printf("[0;32mpsh-$ [0;37m");
-    while (fgets(input, INPUT_MAX, stdin) != EOF) {
+    while (fgets(input, INPUT_MAX, stdin)) {
         t = init_tokenizer(input);
         p = init_parser();
         root = parse_input(p, t);
-        eat_root(p);
+        eat_root(p->root);
         printf("[0;32mpsh-$ [0;37m");
     }
     exit(EXIT_SUCCESS);

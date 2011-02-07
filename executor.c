@@ -51,7 +51,6 @@ static void _eat_piped_command(const node_t *current,
 static int _fork_exec(command_t *current_command,
                       const bool head, const bool tail)
 {
-    int in, out;
     pid_t fork_result, child;
     int next_pipe[2];
 
@@ -101,8 +100,8 @@ static int _fork_exec(command_t *current_command,
 /*
  * _eat_terminal - eat <letter>, <num> or <alphanum>
  */
-static void __eat_terminal(const node_t *current,
-                           command_t* current_command, node_t *parent) {
+static inline void __eat_terminal(const node_t *current,
+                           command_t *current_command, node_t *parent) {
     strncat(parent->token->element,
             current->token->element, strlen(current->token->element));
 }

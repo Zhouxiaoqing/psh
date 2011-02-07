@@ -17,7 +17,6 @@
 
 #include "parser.h"
 
-static inline const char _getc(char* input);
 static token_t *_init_token(token_t *t);
 static void _append_token(token_t *token, const char *c);
 static const token_t *_scan_word(tokenizer_t *t);
@@ -37,7 +36,6 @@ static const token_t *_scan_redirect_out(tokenizer_t *t);
 static inline const char _getc(char *input)
 {
     const char c = input[0];
-    int index;
     char *substring;
 
     if (c != '\0' || c != '\n') {
@@ -54,7 +52,6 @@ static inline const char _getc(char *input)
  */
 tokenizer_t *init_tokenizer(const char *input)
 {
-    int i = 0;
     tokenizer_t *t = (tokenizer_t *) malloc(sizeof(tokenizer_t));
 
     strncpy(t->input, input, INPUT_MAX);
@@ -118,20 +115,15 @@ static const token_t *_scan_word(tokenizer_t *t)
     case '*': case '+': case ',': case '-': case '.': case '/': case ':':
     case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
     case '^': case '_': case '`': case '{': case '|': case '}': case '~':
+        t->token.spec = WORD;
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
         _scan_word(t);
-        break;
-        /*
-    case '$':
-        _scan_env(t);
-        // t->c = _getc(t->input);
         break;
     case '=':
         _scan_env_assignment(t);
         // t->c = _getc(t->input);
         break;
-        */
     default: break;
     }
     
@@ -158,6 +150,7 @@ static const token_t *_scan_letter(tokenizer_t *t)
     case '*': case '+': case ',': case '-': case '.': case '/': case ':':
     case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
     case '^': case '_': case '`': case '{': case '|': case '}': /* case '~': */
+        t->token.spec = LETTER;
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
         _scan_letter(t);
@@ -184,6 +177,7 @@ static const token_t *_scan_alphanum(tokenizer_t *t)
     case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
     case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
     case 'V': case 'W': case 'X': case 'Y': case 'Z': 
+        t->token.spec = ALPHANUM;
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
         _scan_alphanum(t);
@@ -237,10 +231,10 @@ static const token_t *_scan_num(tokenizer_t *t)
         t->c = _getc(t->input);
         break;
     case '<':
-        if (t->token.spec == REDIRECT_IN)
+        /* if (t->token.spec == REDIRECT_IN)
             t->token.spec = REDIRECT_IN_APPEND;
-        else
-            t->token.spec = REDIRECT_IN;
+            else*/
+        t->token.spec = REDIRECT_IN;
         t->c = _getc(t->input);
         break;
     default: break;
@@ -253,10 +247,9 @@ static const token_t *_scan_num(tokenizer_t *t)
  */
 static const token_t *__scan_env(tokenizer_t *t, char *key)
 {
-    const token_t *word;
-
     switch (t->c) {
     case '$':
+        t->token.spec = ENV;
         t->c = _getc(t->input);
         __scan_env(t, key);
         break;
@@ -274,10 +267,10 @@ static const token_t *__scan_env(tokenizer_t *t, char *key)
     case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
     case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
     case 'V': case 'W': case 'X': case 'Y': case 'Z': 
-    case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
-    case '*': case '+': case ',': case '-': case '.': /* case '/': */case ':':
+    /*case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
+    case '*': case '+': case ',': case '-': case '.':  case '/': case ':':
     case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
-    case '^': case '_': case '`': /* case '{':  case '}': */
+    case '^': case '_': case '`': case '{':  case '}':*/
         strncat(key, &(t->c), 1);
         t->c = _getc(t->input);
         __scan_env(t, key);
@@ -324,45 +317,8 @@ static const token_t *_scan_env(tokenizer_t *t)
 /*
  * _scan_home - Scan <home>
  */
-static const token_t *__scan_home(tokenizer_t *t)
-{
-    register struct passwd *pw;
-    register uid_t uid;
-    char *env_home;
-        
-    switch (t->c) {
-    case '~':
-        env_home = getenv("HOME");
-        if (env_home) {
-            strncat(t->token.element, env_home, strlen(env_home));
-        } else {
-            uid = geteuid();
-            pw = getpwuid(uid);
-            if (pw) {
-                const char *homedir = "/home/";
-                strncat(t->token.element, homedir, strlen(homedir));
-                strncat(t->token.element, pw->pw_name, strlen(pw->pw_name));
-            } else {
-                fprintf(stderr,"error: cannot find username for UID %u\n",
-                        (unsigned) uid);
-            }
-        }
-        break;
-    default: break;
-    }
-    
-    return &(t->token);
-}
-
-/*
- * _scan_home - Scan <home>
- */
 static const token_t *_scan_home(tokenizer_t *t)
 {
-    register struct passwd *pw;
-    register uid_t uid;
-    char *env_home;
-        
     switch (t->c) {
     case '~':
         t->token.spec = HOME;
@@ -424,6 +380,7 @@ static const token_t *_scan_redirect_out(tokenizer_t *t)
 {
     switch (t->c) {
     case '>':
+        t->token.spec = REDIRECT_OUT;
         t->c = _getc(t->input);
         switch (t->c) {
         case '>':

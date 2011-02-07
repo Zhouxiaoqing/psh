@@ -24,7 +24,7 @@ static inline void *_init_tree_head(node_t *n)
 }
 
 /*
- * _init_node - initialize tree head and copy token to node's one
+ * _init_node - initialize node with token `origin`
  */
 static inline void *_init_node(node_t *n, const token_t *origin)
 {
@@ -59,7 +59,6 @@ void init_root(node_t *root)
     token->spec = PIPED_COMMAND;
     root = init_node(token);
 }
-
 
 /**
  * init_abstract_node - initialize tree node with it's spec and without it's token

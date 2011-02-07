@@ -86,7 +86,8 @@ static inline const bool _is_word(const token_t *t)
  */
 static inline const bool _is_redirect_in(const token_t *t)
 {
-    return (t->spec == REDIRECT_IN) ? true : false;
+    return (t->spec == REDIRECT_IN ||
+            t->spec == REDIRECT_IN_COMPOSITION) ? true : false;
 }
 
 /*

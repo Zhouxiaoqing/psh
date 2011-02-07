@@ -62,6 +62,6 @@ node_t *create_tree(node_t *parent, const node_t *left, const node_t *right);
  * free_nodes - free nodes which are children of `current` node recursively
  * @current: current node which will be freed
  */
-void free_nodes(node_t *current)
+void free_nodes(node_t *current);
 
 #endif  // PSH_TREE_H_

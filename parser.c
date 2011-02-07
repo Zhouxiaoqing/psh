@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include "parser.h"
+#include "tree.h"
 
 static const node_t *_parse_word(parser_t *p, tokenizer_t *t, node_t *parent);
 static const node_t *_parse_env(parser_t *p, tokenizer_t *t, node_t *parent);
@@ -46,10 +47,6 @@ parser_t *init_parser(void)
     parser_t *p = (parser_t *) malloc(sizeof(parser_t));
     init_root(p->root);
 
-/*     p->p = 0; */
-/*     for (i = 0; i < PIPE_MAX; i++) */
-/*         p->command[i].command_flag = false; */
-    
     return p;
 }
 
@@ -63,7 +60,56 @@ void syntax_error(parser_t *p, tokenizer_t *t)
     free(t);
     free_nodes(p->root);
     free(p);
-    exit(-1);
+    exit(EXIT_FAILURE);
+}
+
+/*
+ * _parse_num - Parse <num>
+ */
+static const node_t *_parse_num(parser_t *p, tokenizer_t *t, node_t *parent)
+{
+    const token_t *_num;
+    node_t *num;
+
+    _num = current_token(t);
+    if (!_is_num(_num))  syntax_error(p, t);
+    num = init_node(_num);
+    create_tree(parent, num, NULL);
+
+    return parent;
+}
+
+
+/*
+ * _parse_alphanum - Parse <alphanum>
+ */
+static const node_t *_parse_alphanum(parser_t *p, tokenizer_t *t, node_t *parent)
+{
+    const token_t *_alphanum;
+    node_t *alphanum;
+    
+    _alphanum = current_token(t);
+    if (!_is_alphanum(_alphanum))  syntax_error(p, t);
+    alphanum = init_node(_alphanum);
+    create_tree(parent, alphanum, NULL);
+    
+    return parent;
+}
+
+/*
+ * _parse_letter - Parse <letter>
+ */
+static const node_t *_parse_letter(parser_t *p, tokenizer_t *t, node_t *parent)
+{
+    const token_t *_letter;
+    node_t *letter;
+
+    _letter = current_token(t);
+    if (!_is_letter(_letter))  syntax_error(p, t);
+    letter = init_node(_letter);
+    create_tree(parent, letter, NULL);
+
+    return parent;
 }
 
 /*
@@ -121,7 +167,22 @@ static const node_t *_parse_env_assignment(parser_t *p, tokenizer_t *t,
     if (!_is_env_assignment(_env_assignment))  syntax_error(p, t);
     env_assignment = init_node(_env_assignment);
     create_tree(parent, env_assignment, NULL);
+    
+    return parent;
+}
 
+/*
+ * _parse_home - Parse <home>
+ */
+static const node_t *_parse_home(parser_t *p, tokenizer_t *t, node_t *parent)
+{    
+    const token_t *_home = current_token(t);
+    const node_t *home;
+
+    if (!_is_home(_home))  syntax_error(p, t);
+    home = init_node(_home);
+    create_tree(parent, home, NULL);
+    
     return parent;
 }
 
@@ -131,7 +192,8 @@ static const node_t *_parse_env_assignment(parser_t *p, tokenizer_t *t,
 static const node_t *_parse_redirect_in(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_redirect_in, *_word;
-    node_t *redirect_in, *word;
+    node_t *redirect_in;
+    const node_t *word;
 
     _redirect_in = current_token(t);
     if (!_is_redirect_in(_redirect_in))  syntax_error(p, t);
@@ -144,7 +206,6 @@ static const node_t *_parse_redirect_in(parser_t *p, tokenizer_t *t, node_t *par
         redirect_in = NULL;
         break;
     }
-    
     _word = next_token(t);
     if (!_is_word(_word))  syntax_error(p, t);
     word = _parse_word(p, t, redirect_in);
@@ -159,7 +220,8 @@ static const node_t *_parse_redirect_in(parser_t *p, tokenizer_t *t, node_t *par
 static const node_t *_parse_redirect_out(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_redirect_out, *_word;
-    node_t *redirect_out, *word;
+    node_t *redirect_out;
+    const node_t *word;
     
     _redirect_out = current_token(t);
     if (!_is_redirect_out(_redirect_out))  syntax_error(p, t);
@@ -172,9 +234,8 @@ static const node_t *_parse_redirect_out(parser_t *p, tokenizer_t *t, node_t *pa
         redirect_out = NULL;
         break;
     }
-    
     _word = next_token(t);
-    if (_is_word(_word))  syntax_error(p, t);
+    if (!_is_word(_word))  syntax_error(p, t);
     word = _parse_word(p, t, redirect_out);
     create_tree(parent, redirect_out, NULL);
 
@@ -187,7 +248,7 @@ static const node_t *_parse_redirect_out(parser_t *p, tokenizer_t *t, node_t *pa
 static const node_t *_parse_redirection(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_redirection;
-    node_t *redirection;
+    const node_t *redirection;
 
     _redirection = current_token(t);
     if (!_is_redirection(_redirection))  syntax_error(p, t);
@@ -213,10 +274,10 @@ static const node_t *_parse_redirection(parser_t *p, tokenizer_t *t, node_t *par
 static const node_t *_parse_redirection_list(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_redirection, *_redirection_list;
-    node_t *redirection, *redirection_list;
+    const node_t *redirection, *redirection_list;
 
     _redirection = current_token(t);
-    if (!_is_redirection(redirection))  syntax_error(p, t);
+    if (!_is_redirection(_redirection))  syntax_error(p, t);
     redirection = _parse_redirection(p, t, init_abstract_node(REDIRECTION_LIST));
     _redirection_list = next_token(t);
     if (_is_redirection_list(_redirection_list))
@@ -235,7 +296,7 @@ static const node_t *_parse_redirection_list(parser_t *p, tokenizer_t *t, node_t
 static const node_t *_parse_command_element(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_command_element;
-    node_t *command_element;
+    // node_t *command_element;
     
     _command_element = current_token(t);
     if (!_is_command_element(_command_element))  syntax_error(p, t);
@@ -266,7 +327,7 @@ static const node_t *_parse_command_element(parser_t *p, tokenizer_t *t, node_t 
 static const node_t *_parse_command(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_command_element, *_command;
-    node_t *command_element, *command;
+    const node_t *command_element, *command;
     
     _command_element = current_token(t);
     if (!_is_command_element(_command_element))  syntax_error(p, t);
@@ -288,7 +349,7 @@ static const node_t *_parse_command(parser_t *p, tokenizer_t *t, node_t *parent)
 static const node_t *_parse_piped_command(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_command, *_piped_command;
-    node_t *command, *piped_command;
+    const node_t *command, *piped_command;
 
     _command = current_token(t);
     if (!_is_command(_command))  syntax_error(p, t);

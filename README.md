@@ -53,7 +53,7 @@ Shell input syntax in BNF
                     | '-' | '.' | '/' | ':' | ';" | '?' | '@' | '[' | ']' | '&' 
                     | '\' | '^' | '_' | '`' | '{' | '|' | '}' 
         <word> ::= (<env> | <letter> | <home>) { <word> }
-        <home> ::= '~' <alphanum>
+        <home> ::= '~' { <alphanum> }
         <env> ::= '$' { '{' } <word> { '}' }
         <num> ::= <digit> { <num> }
         <env_assignment> ::= '=' <word>
