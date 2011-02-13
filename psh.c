@@ -49,13 +49,13 @@ int main(int argc, char **argv)
     char input[INPUT_MAX];
     
     say_hello();
-    printf("[0;32mpsh-$ [0;37m");
-    while (fgets(input, INPUT_MAX, stdin)) {
+    printf("[0;32mpsh-$[0;37m ");
+    while (*fgets(input, INPUT_MAX, stdin)) {
         t = init_tokenizer(input);
         p = init_parser();
         root = parse_input(p, t);
-        eat_root(p->root);
-        printf("[0;32mpsh-$ [0;37m");
+        eat_root(root);
+        printf("[0;32mpsh-$[0;37m" );
     }
-    exit(EXIT_SUCCESS);
+    return 0;
 }

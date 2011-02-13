@@ -18,34 +18,41 @@
 #include "parser.h"
 #include "tree.h"
 
+static const node_t *_parse_terminal(parser_t *p, tokenizer_t *t);
+static const node_t *_parse_num(parser_t *p, tokenizer_t *t);
+static const node_t *_parse_letter(parser_t *p, tokenizer_t *t);
+static const node_t *_parse_alphanum(parser_t *p, tokenizer_t *t);
+static const node_t *_parse_env(parser_t *p, tokenizer_t *t);
 static const node_t *_parse_word(parser_t *p, tokenizer_t *t, node_t *parent);
-static const node_t *_parse_env(parser_t *p, tokenizer_t *t, node_t *parent);
-static const node_t *_parse_env_assignment(parser_t *p, tokenizer_t *t,
-                                            node_t *parent);
+static const node_t *
+_parse_env_assignment(parser_t *p, tokenizer_t *t, node_t *parent);
 static const node_t *_parse_home(parser_t *p, tokenizer_t *t, node_t *parent);
-static const node_t *_parse_redirect_out(parser_t *p, tokenizer_t *t,
-                                          node_t *parent);
-static const node_t *_parse_redirect_in(parser_t *p, tokenizer_t *t,
-                                         node_t *parent);
-static const node_t *_parse_redirection(parser_t *p, tokenizer_t *t,
-                                         node_t *parent);
-static const node_t *_parse_command_element(parser_t *p, tokenizer_t *t,
-                                             node_t *parent);
-static const node_t *_parse_redirection_list(parser_t *p, tokenizer_t *t,
-                                              node_t *parent);
-static const node_t *_parse_command(parser_t *p, tokenizer_t *t,
-                                     node_t *parent);
-static const node_t *_parse_piped_command(parser_t *p, tokenizer_t *t,
-                                           node_t *parent);
+static const node_t *
+_parse_redirect_out(parser_t *p, tokenizer_t *t, node_t *parent);
+static const node_t *
+_parse_redirect_in(parser_t *p, tokenizer_t *t, node_t *parent);
+static const node_t *
+_parse_redirection(parser_t *p, tokenizer_t *t, node_t *parent);
+static const node_t *
+_parse_command_element(parser_t *p, tokenizer_t *t, node_t *parent);
+static const node_t *
+_parse_redirection_list(parser_t *p, tokenizer_t *t, node_t *parent);
+static const node_t *
+_parse_command(parser_t *p, tokenizer_t *t, node_t *parent);
+static const node_t *
+_parse_piped_command(parser_t *p, tokenizer_t *t, node_t *parent);
 
 /**
  * init_parsr - Initialize parser and command tables.
  */
 parser_t *init_parser(void)
 {
-    // int i = 0;
     parser_t *p = (parser_t *) malloc(sizeof(parser_t));
-    init_root(p->root);
+    if (p == NULL) {
+        fprintf(stderr, "Bad allocation (parser) \n");
+        exit(EXIT_FAILURE);
+    }
+    p->root = init_root();
 
     return p;
 }
@@ -63,54 +70,53 @@ void syntax_error(parser_t *p, tokenizer_t *t)
     exit(EXIT_FAILURE);
 }
 
+static const node_t *_parse_terminal(parser_t *p, tokenizer_t *t)
+{
+    const token_t *_terminal;
+    node_t *terminal;
+
+    _terminal = current_token(t);
+    if (!_is_letter(_terminal) && !_is_alphanum(_terminal)
+        && !_is_num(_terminal)  && !_is_env(_terminal))  syntax_error(p, t);
+    terminal = init_node(_terminal);
+
+    return terminal;
+}
+
 /*
  * _parse_num - Parse <num>
  */
-static const node_t *_parse_num(parser_t *p, tokenizer_t *t, node_t *parent)
+static const node_t *_parse_num(parser_t *p, tokenizer_t *t)
 {
-    const token_t *_num;
-    node_t *num;
-
-    _num = current_token(t);
-    if (!_is_num(_num))  syntax_error(p, t);
-    num = init_node(_num);
-    create_tree(parent, num, NULL);
-
-    return parent;
+    return _parse_terminal(p, t);
 }
 
 
 /*
  * _parse_alphanum - Parse <alphanum>
  */
-static const node_t *_parse_alphanum(parser_t *p, tokenizer_t *t, node_t *parent)
+static const node_t *_parse_alphanum(parser_t *p, tokenizer_t *t)
 {
-    const token_t *_alphanum;
-    node_t *alphanum;
-    
-    _alphanum = current_token(t);
-    if (!_is_alphanum(_alphanum))  syntax_error(p, t);
-    alphanum = init_node(_alphanum);
-    create_tree(parent, alphanum, NULL);
-    
-    return parent;
+    return _parse_terminal(p, t);
 }
 
 /*
  * _parse_letter - Parse <letter>
  */
-static const node_t *_parse_letter(parser_t *p, tokenizer_t *t, node_t *parent)
+static const node_t *_parse_letter(parser_t *p, tokenizer_t *t)
 {
-    const token_t *_letter;
-    node_t *letter;
-
-    _letter = current_token(t);
-    if (!_is_letter(_letter))  syntax_error(p, t);
-    letter = init_node(_letter);
-    create_tree(parent, letter, NULL);
-
-    return parent;
+    return _parse_terminal(p, t);
 }
+
+/*
+ * _parse_env - Parse <env>
+ */
+static const node_t *_parse_env(parser_t *p, tokenizer_t *t)
+{
+    return _parse_terminal(p, t);
+}
+
+
 
 /*
  * _parse_word - Parse <word>
@@ -121,44 +127,53 @@ static const node_t *_parse_word(parser_t *p, tokenizer_t *t, node_t *parent)
     const node_t *elh;
 
     _elh = current_token(t);
-    if (!_is_word(_elh)) syntax_error(p, t);
+    if (!_is_word(_elh))  syntax_error(p, t);
+    // elh = init_abstract_node(WORD);
+    switch (_elh->spec) {
+    case ENV:
+        // _parse_env(p, t, init_abstract_node(WORD));
+        elh = _parse_env(p, t);
+        break;
+    case LETTER:
+        // _parse_letter(p, t, init_abstract_node(WORD));
+        elh = _parse_letter(p, t);
+        break;
+    case ALPHANUM:
+        // _parse_alphanum(p, t, init_abstract_node(WORD));
+        elh = _parse_alphanum(p, t);
+        break;
+    case NUM:
+        // _parse_num(p, t, init_abstract_node(WORD));
+        elh = _parse_num(p, t);
+        break;
+    case HOME:
+        // _parse_home(p, t, init_abstract_node(WORD));
+        elh = _parse_home(p, t, parent);
+        break;
+    default:
+        break;
+    }
     
     const token_t *_word;
     const node_t *word;
 
     _word = next_token(t);
-    elh = init_node(_elh);
     if (_is_word(_word))
-        word = _parse_word(p, t, init_node(_word));
+        // word = _parse_word(p, t, init_node(_word));
+        word = _parse_word(p, t, init_abstract_node(WORD));
     else
         word = NULL;
-    
+    // elh = container_of(&(parent->head->left), node_t, head);
     create_tree(parent, elh, word);
     
     return parent;
 }
 
 /*
- * _parse_env - Parse <env>
- */
-static const node_t *_parse_env(parser_t *p, tokenizer_t *t, node_t *parent)
-{
-    const token_t *_env;
-    const node_t *env;
-
-    _env = current_token(t);
-    if (!_is_env(_env))  syntax_error(p, t);
-    env = init_node(_env);
-    create_tree(parent, env, NULL);
-
-    return parent;
-}
-
-/*
  * _parse_env_assignment - Parse <env_assignment>
  */
-static const node_t *_parse_env_assignment(parser_t *p, tokenizer_t *t,
-                                           node_t *parent)
+static const node_t *
+_parse_env_assignment(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_env_assignment;
     const node_t *env_assignment;
@@ -189,7 +204,8 @@ static const node_t *_parse_home(parser_t *p, tokenizer_t *t, node_t *parent)
 /*
  * _parse_redirect_in - Parse <redirect_in>
  */
-static const node_t *_parse_redirect_in(parser_t *p, tokenizer_t *t, node_t *parent)
+static const node_t *
+_parse_redirect_in(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_redirect_in, *_word;
     node_t *redirect_in;
@@ -245,7 +261,8 @@ static const node_t *_parse_redirect_out(parser_t *p, tokenizer_t *t, node_t *pa
 /*
  * _parse_redirection - Parse <redirection>
  */
-static const node_t *_parse_redirection(parser_t *p, tokenizer_t *t, node_t *parent)
+static const node_t *
+_parse_redirection(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_redirection;
     const node_t *redirection;
@@ -271,7 +288,8 @@ static const node_t *_parse_redirection(parser_t *p, tokenizer_t *t, node_t *par
 /*
  * _parse_redirection_list - Parse <redirection_list>
  */
-static const node_t *_parse_redirection_list(parser_t *p, tokenizer_t *t, node_t *parent)
+static const node_t *
+_parse_redirection_list(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_redirection, *_redirection_list;
     const node_t *redirection, *redirection_list;
@@ -293,30 +311,33 @@ static const node_t *_parse_redirection_list(parser_t *p, tokenizer_t *t, node_t
 /*
  * _parse_command_element - Parse <command_element>
  */
-static const node_t *_parse_command_element(parser_t *p, tokenizer_t *t, node_t *parent)
+static const node_t *
+_parse_command_element(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_command_element;
-    // node_t *command_element;
+    const node_t *wer;
     
     _command_element = current_token(t);
     if (!_is_command_element(_command_element))  syntax_error(p, t);
     // command_element = init_node(_command_element)
     switch (_command_element->spec) {
-    case WORD:
+    case WORD: case ENV: case LETTER: case ALPHANUM: case NUM:
         // _parse_word(p, t, command_element);
-        _parse_word(p, t, parent);
+        wer = _parse_word(p, t, init_abstract_node(WORD));
         break;
     case ENV_ASSIGNMENT:
         // _parse_env_assignment(p, t, command_element);
-        _parse_env_assignment(p, t, parent);
+        wer = _parse_env_assignment(p, t, init_abstract_node(ENV_ASSIGNMENT));
         break;
     case REDIRECT_OUT: case REDIRECT_OUT_APPEND:
     case REDIRECT_IN:
         // _parse_redirection_list(p, t, command_element);
-        _parse_redirection_list(p, t, parent);
+        wer = _parse_redirection_list(p, t, init_abstract_node(REDIRECTION_LIST));
         break;
     default: break;
     }
+    
+    create_tree(parent, wer, NULL);
     
     return parent;
 }
@@ -324,7 +345,8 @@ static const node_t *_parse_command_element(parser_t *p, tokenizer_t *t, node_t 
 /*
  * _parse_command - Parse <command> and make pipe.
  */
-static const node_t *_parse_command(parser_t *p, tokenizer_t *t, node_t *parent)
+static const node_t *
+_parse_command(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_command_element, *_command;
     const node_t *command_element, *command;
@@ -346,12 +368,14 @@ static const node_t *_parse_command(parser_t *p, tokenizer_t *t, node_t *parent)
 /*
  * _parse_piped_command - Parse <piped_command>
  */
-static const node_t *_parse_piped_command(parser_t *p, tokenizer_t *t, node_t *parent)
+static const node_t *
+_parse_piped_command(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_command, *_piped_command;
     const node_t *command, *piped_command;
 
     _command = current_token(t);
+    if (_is_eol(_command))  return parent;
     if (!_is_command(_command))  syntax_error(p, t);
     command = _parse_command(p, t, init_abstract_node(COMMAND));
 
@@ -372,5 +396,6 @@ static const node_t *_parse_piped_command(parser_t *p, tokenizer_t *t, node_t *p
  */
 const node_t *parse_input(parser_t *p, tokenizer_t *t)
 {
-    return _parse_piped_command(p, t, p->root);
+    const node_t *root = _parse_piped_command(p, t, p->root);
+    return root;
 }

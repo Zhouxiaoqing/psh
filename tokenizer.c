@@ -7,6 +7,7 @@
  * @author: Taku Fukushima <tfukushima@dcl.info.waseda.ac.jp>
  */
 
+#include <ctype.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +24,6 @@ static const token_t *_scan_word(tokenizer_t *t);
 static const token_t *_scan_letter(tokenizer_t *t);
 static const token_t *_scan_num(tokenizer_t *t);
 static const token_t *_scan_env(tokenizer_t *t);
-static const token_t *_scan_env_word(tokenizer_t *t);
 static const token_t *_scan_home(tokenizer_t *t);
 static const token_t *_scan_env_assignment(tokenizer_t *t);
 static const token_t *_scan_redirect_in(tokenizer_t *t);
@@ -33,12 +33,13 @@ static const token_t *_scan_redirect_out(tokenizer_t *t);
 /*
  * _getc - get a character from input
  */
-static inline const char _getc(char *input)
+static const char _getc(char *input)
 {
     const char c = input[0];
     char *substring;
 
-    if (c != '\0' || c != '\n') {
+    // if (c != '\0' || c != '\n') {
+    if (c != '\0') {
         substring = input + 1;
         strncpy(input, substring, ELEMENT_MAX);
     }
@@ -53,6 +54,10 @@ static inline const char _getc(char *input)
 tokenizer_t *init_tokenizer(const char *input)
 {
     tokenizer_t *t = (tokenizer_t *) malloc(sizeof(tokenizer_t));
+    if (t == NULL) {
+        fprintf(stderr, "Bad allocation (toknizer) \n");
+        exit(EXIT_FAILURE);
+    }
 
     strncpy(t->input, input, INPUT_MAX);
     // Read first character from input.
@@ -417,7 +422,7 @@ const token_t *next_token(tokenizer_t *t)
  */
 const token_t  *_next_token(tokenizer_t *t)
 {
-    while (isspace(t->c)) t->c = _getc(t->input);
+    while (isspace(t->c) && t->c != '\n') t->c = _getc(t->input);
     switch (t->c) {
     case EOF:
         t->token.spec = END_OF_FILE;
@@ -440,7 +445,7 @@ const token_t  *_next_token(tokenizer_t *t)
     case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
     case 'V': case 'W': case 'X': case 'Y': case 'Z':
         t->token.spec = ALPHANUM;
-        _scan_num(t);
+        _scan_alphanum(t);
         t->c = _getc(t->input);
         break;
     case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
@@ -448,7 +453,7 @@ const token_t  *_next_token(tokenizer_t *t)
     case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
     case '^': case '_': case '`': case '{': case '}': 
         t->token.spec = LETTER;
-        _scan_word(t);
+        _scan_letter(t);
         t->c = _getc(t->input);
         break;
     case '$':

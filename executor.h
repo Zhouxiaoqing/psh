@@ -10,6 +10,7 @@
 #ifndef PSH_EXECUTOR_H_
 #define PSH_EXECUTOR_H_
 
+#include <stdio.h>
 #include <sys/types.h>
 
 #include "tokenizer.h"
@@ -27,11 +28,17 @@ typedef struct command {
 /*
  * _init_command - initialize command except for I/O fd
  */
-static inline void _init_command(command_t *command)
+static inline command_t *_init_command()
 {
-    strncat(command->cmd, '\0', ELEMENT_MAX);
-    strncat(command->args, '\0', ARG_MAX);
+    command_t *command = (command_t *) malloc(sizeof(command_t));
+    if (command == NULL) {
+        fprintf(stderr, "Bad allocation (command).\n");
+        exit(EXIT_FAILURE);
+    }
+    // strncat(command->cmd, '\0', ELEMENT_MAX);
+    // strncat(command->args, '\0', ARG_MAX);
     command->command_flag = false;
+    return command;
 }
 
 /**

@@ -40,12 +40,13 @@ static inline bool _is_abstract_node(const node_t *node) {
  * init_node - initialize tree node
  * @token: token by which node will be initialized
  */
+// node_t *init_node(const token_t *token);
 node_t *init_node(const token_t *token);
 /**
  * init_root - initialize tree root
  * @root: the root of syntax tree
  */
-void init_root(node_t *root);
+node_t *init_root();
 /**
  * init_abstract_node - initialize tree node with it's spec and without it's token
  * @spec: token's specifier

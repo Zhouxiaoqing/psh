@@ -7,6 +7,7 @@
  * @author: Taku Fukushima <tfukushima@dcl.info.waseda.ac.jp>
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -16,25 +17,40 @@
 /*
  * _init_tree_head - initialize tree head
  */
-static inline void *_init_tree_head(node_t *n)
+static inline void _init_tree_head(node_t *node)
 {
-    tree_t *t = (tree_t *) malloc(sizeof(tree_t));
-    n->head = t;
-    n->head->left = n->head->right = NULL;
+    tree_t *head = (tree_t *) malloc(sizeof(tree_t));
+    if (head == NULL) {
+        fprintf(stderr, "Bad allocation (tree head) \n");
+        exit(EXIT_FAILURE);
+    }
+    node->head = head;
+    node->head->left = node->head->right = NULL;
 }
 
 /*
  * _init_node - initialize node with token `origin`
  */
-static inline void *_init_node(node_t *n, const token_t *origin)
+static node_t *_init_node(const token_t *origin)
 {
-    token_t *token;
+    token_t *token = (token_t *) malloc(sizeof(token_t));
+    node_t *node = (node_t *) malloc(sizeof(node_t));
 
-    _init_tree_head(n);
+    if (token == NULL) {
+        fprintf(stderr, "Bad allocation (token) \n");
+        exit(EXIT_FAILURE);
+    }
+    if (node == NULL) {
+        fprintf(stderr, "Bad allocation (node) \n");
+        exit(EXIT_FAILURE);
+    }
+    _init_tree_head(node);
+    node->token = token;
+    node->token->spec = origin->spec;
+    strncpy(node->token->element, origin->element, strlen(origin->element));
+    // free(origin);
     
-    token->spec = origin->spec;
-    strncpy(token->element, origin->element, strlen(origin->element));
-    n->token = token;
+    return node;
 }
 
 /**
@@ -43,36 +59,46 @@ static inline void *_init_node(node_t *n, const token_t *origin)
  */
 node_t *init_node(const token_t *token)
 {
-    node_t *n = (node_t *) malloc(sizeof(node_t));
-    _init_node(n, token);
-    
-    return n;
+    node_t *node = _init_node(token);
+
+    return node;
 }
 
 /**
  * init_root - initialize tree root
  * @root: the root of syntax tree
  */
-void init_root(node_t *root)
+node_t *init_root(node_t *root)
 {
-    token_t *token;
+    token_t *token = (token_t *) malloc(sizeof(token_t));
+    
+    if (token == NULL) {
+        fprintf(stderr, "Bad allocation (token) \n");
+        exit(EXIT_FAILURE);
+    }
     token->spec = PIPED_COMMAND;
-    root = init_node(token);
+
+    return init_node(token);
 }
 
 /**
- * init_abstract_node - initialize tree node with it's spec and without it's token
+ * init_abstract_node - initialize tree node only with it's spec
  * @spec: token's specifier
  */
-node_t *init_abstract_node(token_spec_t spec)
+node_t *init_abstract_node(const token_spec_t spec)
 {
-    token_t *token;
+    token_t *token = (token_t *) malloc(sizeof(token_t));
+    node_t *node;
 
+    if (token == NULL) {
+        fprintf(stderr, "Bad allocation (token) \n");
+        exit(EXIT_FAILURE);
+    }
     token->spec = spec;
-    node_t *n = (node_t *) malloc(sizeof(node_t));
-    _init_node(n, token);
+    node = _init_node(token);
+    // free(token);
     
-    return n;
+    return node;
 }
 
 /**
@@ -83,9 +109,9 @@ node_t *init_abstract_node(token_spec_t spec)
  */
 node_t *create_tree(node_t *parent, const node_t *left, const node_t *right)
 {
-    parent->head->left = left->head;
-    parent->head->right = right->head;
-    
+    parent->head->left = (left != NULL)? left->head : NULL;
+    parent->head->right = (right != NULL)? right->head : NULL;
+
     return parent;
 }
 

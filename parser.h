@@ -78,7 +78,7 @@ static inline const bool _is_home(const token_t *t)
  */
 static inline const bool _is_word(const token_t *t)
 {
-    return (_is_env(t) || _is_letter(t) || _is_home(t)) ? true : false;
+    return (t->spec == WORD || _is_env(t) || _is_letter(t) || _is_home(t)) ? true : false;
 }
 
 /*
@@ -147,6 +147,14 @@ static inline const bool _is_command(const token_t *t)
 static inline const bool _is_piped_command(const token_t *t)
 {
     return (_is_command(t)) ? true : false;
+}
+
+/*
+ * _is_eol - chech whether token is '\n'
+ */
+static inline const bool _is_eol(const token_t *t)
+{
+    return (t->spec == END_OF_LINE) ? true : false;
 }
 
 /**

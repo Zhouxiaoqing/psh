@@ -15,8 +15,8 @@
 
 #include "consts.h"
 
-typedef enum {
-    PIPED_COMMAND,
+typedef enum token_spec {
+    PIPED_COMMAND = 1,
     COMMAND,
     REDIRECT_IN,
     REDIRECT_IN_COMPOSITION,

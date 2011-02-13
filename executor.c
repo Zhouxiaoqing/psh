@@ -19,7 +19,7 @@
 #include "executor.h"
 
 static int _fork_exec(command_t *current_command,
-                      const bool head, const bool tail);
+                      const bool head_flag, const bool tail_flag);
 static void _eat_letter(const node_t *current,
                         command_t *current_command, node_t *parent);
 static void _eat_num(const node_t *current,
@@ -34,8 +34,8 @@ static void _eat_env(const node_t *current,
 static void _eat_word(node_t *current, command_t *current_command);
 static void _eat_env_assignment(const node_t *current,
                                 command_t *current_command);
-static void _eat_redirect_out(const node_t *current, command_t *current_command);
-static void _eat_redirect_in(const node_t *current, command_t *current_command);
+static void _eat_redirection_out(const node_t *current, command_t *current_command);
+static void _eat_redirection_in(const node_t *current, command_t *current_command);
 static void _eat_redirection(const node_t *current, command_t *current_command);
 static void _eat_redirection_list(const node_t *current,
                                   command_t *current_command);
@@ -49,7 +49,7 @@ static void _eat_piped_command(const node_t *current,
  * _fork_exec - fork and exec
  */
 static int _fork_exec(command_t *current_command,
-                      const bool head, const bool tail)
+                      const bool head_flag, const bool tail_flag)
 {
     pid_t fork_result, child;
     int next_pipe[2];
@@ -62,8 +62,8 @@ static int _fork_exec(command_t *current_command,
             exit(EXIT_FAILURE);
             break;
         case 0:  // case of child
-            if (!head || !tail) {
-                if (head)
+            if (head_flag || tail_flag) {
+                if (head_flag)
                     current_command->input_fd = open("/dev/stdin", O_RDONLY);
                 else
                     dup2(current_command->input_fd, 0);
@@ -71,7 +71,7 @@ static int _fork_exec(command_t *current_command,
                 dup2(current_command->input_fd, 0);
                 close(current_command->input_fd);
 
-                if (tail) {
+                if (tail_flag) {
                     close(current_command->output_fd);
                     current_command->output_fd = open("/dev/stdout", O_WRONLY);
                 } else {
@@ -84,7 +84,7 @@ static int _fork_exec(command_t *current_command,
             }
             execlp(current_command->cmd, current_command->cmd,
                    current_command->args, NULL);
-            exit(EXIT_SUCCESS);
+            // exit(EXIT_SUCCESS);
             break;
         default:  // case of parent
             child = wait((int *) 0);
@@ -94,6 +94,8 @@ static int _fork_exec(command_t *current_command,
         fprintf(stderr, "pipe creation failure");
         exit(EXIT_FAILURE);
     }
+
+    return 0;
 }
 
 
@@ -166,8 +168,7 @@ static void _eat_env(const node_t *current,
 /*
  * _eat_word - eat <word>
  */
-static void _eat_word(node_t *current,
-                      command_t *current_command) {
+static void _eat_word(node_t *current, command_t *current_command) {
     const node_t *elh = container_of(&(current->head->left), node_t, head);
     node_t *word = container_of(&(current->head->right), node_t, head);
 
@@ -179,8 +180,16 @@ static void _eat_word(node_t *current,
     case LETTER:
         _eat_letter(elh, current_command, current);
         break;
+    case ALPHANUM:
+        _eat_alphanum(elh, current_command, current);
+        break;
+    case NUM:
+        _eat_num(elh, current_command, current);
+        break;
     case HOME:
         _eat_home(elh, current_command, current);
+        break;
+    default:
         break;
     }
     
@@ -191,7 +200,7 @@ static void _eat_word(node_t *current,
         strncat(current_command->args, current->token->element, ARG_MAX);
     }
 
-    if (word != NULL & _is_word(word->token))
+    if (word != NULL && _is_word(word->token))
         _eat_word(word, current_command);
 }
 
@@ -224,6 +233,8 @@ static void _eat_redirection_out(const node_t *current,
         break;
     case REDIRECT_OUT_APPEND:
         mode = "a+";
+        break;
+    default:
         break;
     }
 
@@ -280,6 +291,8 @@ static void _eat_redirection(const node_t *current,
     case REDIRECT_OUT: case REDIRECT_OUT_APPEND:
         _eat_redirection_out(redirect_in_out, current_command);
         break;
+    default:
+        break;
     }
 }
 
@@ -319,6 +332,8 @@ static void _eat_command_element(const node_t *current,
     case REDIRECT_OUT: case REDIRECT_OUT_APPEND:
         _eat_redirection_list(wer, current_command);
         break;
+    default:
+        break;
     }
 
     if (command_element != NULL && _is_command_element(command_element->token))
@@ -343,19 +358,19 @@ static void _eat_command(const node_t *current, command_t *current_command)
  * _eat_piped_command - eat <piped_command>
  */
 static void _eat_piped_command(const node_t *current,
-                               command_t *current_command, const bool head)
+                               command_t *current_command, const bool head_flag)
 {
     const node_t *command, *piped_command;
     command = container_of(&(current->head->left), node_t, head);
     piped_command = container_of(&(current->head->right), node_t, head);
-    int next_pipe[2];
 
+    if (_is_eol(command->token))  return;
     _eat_command(command, current_command);
     if (piped_command != NULL &&
         _is_piped_command(piped_command->token)) {
-        _fork_exec(current_command, head, false);
+        _fork_exec(current_command, head_flag, false);
     } else {
-        _fork_exec(current_command, head, true);
+        _fork_exec(current_command, head_flag, true);
     }
     _init_command(current_command);
     _eat_piped_command(piped_command, current_command, false);
@@ -367,7 +382,6 @@ static void _eat_piped_command(const node_t *current,
  */
 void eat_root(const node_t *root)
 {
-    command_t *current_command;
-    _init_command(current_command);
+    command_t *current_command = _init_command(current_command);
     _eat_piped_command(root, current_command, true);
 }
