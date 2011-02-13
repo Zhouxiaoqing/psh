@@ -125,11 +125,11 @@ void free_nodes(node_t *current)
 
     if (current->head->left != NULL) {
         left = container_of(&(current->head->left), node_t, head);
-        free(left);
+        free_nodes(left);
     }
     if (current->head->left != NULL) {
         right = container_of(&(current->head->right), node_t, head);
-        free(right);
+        free_nodes(right);
     }
     free(current);
 }
