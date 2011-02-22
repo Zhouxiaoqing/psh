@@ -18,8 +18,8 @@ typedef struct tree_head {
 } tree_t;
 
 typedef struct node {
-    tree_t *head;
     token_t *token;
+    tree_t *head;
 } node_t;
 
 /*

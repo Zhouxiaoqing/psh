@@ -59,9 +59,7 @@ static node_t *_init_node(const token_t *origin)
  */
 node_t *init_node(const token_t *token)
 {
-    node_t *node = _init_node(token);
-
-    return node;
+    return _init_node(token);
 }
 
 /**
@@ -73,8 +71,8 @@ node_t *init_root(node_t *root)
     token_t *token = (token_t *) malloc(sizeof(token_t));
     
     if (token == NULL) {
-        fprintf(stderr, "Bad allocation (token) \n");
-        exit(EXIT_FAILURE);
+        print_error("Bad allocation (token) \n");
+
     }
     token->spec = PIPED_COMMAND;
 

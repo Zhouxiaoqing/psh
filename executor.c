@@ -49,6 +49,7 @@ static void _eat_command(const node_t *current, command_t *current_command,
 static void _eat_piped_command(const node_t *current,
                                command_t *current_command, const bool head,
                                node_t *root);
+
 /**
  * print_error - print error message and finalize program
  */

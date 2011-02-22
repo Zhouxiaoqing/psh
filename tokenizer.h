@@ -78,4 +78,3 @@ const token_t *next_token(tokenizer_t *t);
 const token_t *_next_token(tokenizer_t *t);
 
 #endif  // PSH_TOKENIZER_H_
-
