@@ -40,12 +40,19 @@ static void say_hello()
     timer = time(NULL);
     printf("%s", ctime(&timer));
 }
+
+static void finalize(tokenizer_t *t, parser_t *p, node_t *root)
+{
+    free(t);
+    free(p);
+    free_nodes(root);
+}
     
 int main(int argc, char **argv)
 {
     tokenizer_t *t;
     parser_t *p;
-    const node_t *root;
+    node_t *root;
     char input[INPUT_MAX];
     
     say_hello();
@@ -53,8 +60,9 @@ int main(int argc, char **argv)
     while (*fgets(input, INPUT_MAX, stdin)) {
         t = init_tokenizer(input);
         p = init_parser();
-        root = parse_input(p, t);
+        root = (node_t *)parse_input(p, t);
         eat_root(root);
+        finalize(t, p, root);
         printf("[0;32mpsh-$[0;37m" );
     }
     return 0;

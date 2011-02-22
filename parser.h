@@ -29,6 +29,7 @@
 
 typedef struct parser {
     node_t *root;
+    int args_count;
     // int p;  // the number of current pipe
     // command_t command[PIPE_MAX];
 } parser_t;

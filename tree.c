@@ -45,9 +45,9 @@ static node_t *_init_node(const token_t *origin)
         exit(EXIT_FAILURE);
     }
     _init_tree_head(node);
+    token->spec = origin->spec;
+    strncpy(token->element, origin->element, strlen(origin->element));
     node->token = token;
-    node->token->spec = origin->spec;
-    strncpy(node->token->element, origin->element, strlen(origin->element));
     // free(origin);
     
     return node;
