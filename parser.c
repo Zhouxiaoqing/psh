@@ -154,17 +154,7 @@ static const node_t *_parse_word(parser_t *p, tokenizer_t *t, node_t *parent)
         break;
     }
     
-    const token_t *_word;
-    const node_t *word;
-
-    _word = next_token(t);
-    if (_is_word(_word))
-        // word = _parse_word(p, t, init_node(_word));
-        word = _parse_word(p, t, init_abstract_node(WORD));
-    else
-        word = NULL;
-    // elh = container_of(&(parent->head->left), node_t, head);
-    create_tree(parent, elh, word);
+    create_tree(parent, elh, NULL);
     
     return parent;
 }
