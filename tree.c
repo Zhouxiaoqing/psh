@@ -24,8 +24,10 @@ static inline void _init_tree_head(node_t *node)
         fprintf(stderr, "Bad allocation (tree head) \n");
         exit(EXIT_FAILURE);
     }
-    node->head = head;
-    node->head->left = node->head->right = NULL;
+    /* node->head = head; */
+    /* node->head->left = node->head->right = NULL; */
+    node->left = NULL;
+    node->right = NULL;
 }
 
 /*
@@ -44,7 +46,9 @@ static node_t *_init_node(const token_t *origin)
         fprintf(stderr, "Bad allocation (node) \n");
         exit(EXIT_FAILURE);
     }
-    _init_tree_head(node);
+    // _init_tree_head(node);
+    node->left = NULL;
+    node->right = NULL;
     token->spec = origin->spec;
     strncpy(token->element, origin->element, strlen(origin->element));
     node->token = token;
@@ -71,8 +75,7 @@ node_t *init_root(node_t *root)
     token_t *token = (token_t *) malloc(sizeof(token_t));
     
     if (token == NULL) {
-        print_error("Bad allocation (token) \n");
-
+        print_error("Bad allocation (token) \n", root);
     }
     token->spec = PIPED_COMMAND;
 
@@ -107,8 +110,10 @@ node_t *init_abstract_node(const token_spec_t spec)
  */
 node_t *create_tree(node_t *parent, const node_t *left, const node_t *right)
 {
-    parent->head->left = (left != NULL)? left->head : NULL;
-    parent->head->right = (right != NULL)? right->head : NULL;
+    /* parent->head->left = (left != NULL)? left->head : NULL; */
+    /* parent->head->right = (right != NULL)? right->head : NULL; */
+    parent->left = (node_t *)left;
+    parent->right = (node_t *)right;
 
     return parent;
 }
@@ -121,12 +126,16 @@ void free_nodes(node_t *current)
 {
     node_t *left, *right;
 
-    if (current->head->left != NULL) {
-        left = container_of(&(current->head->left), node_t, head);
+    // if (current->head->left != NULL) {
+    if (current->left != NULL) {
+        // left = container_of(&(current->head->left), node_t, head);
+        left = (node_t *)current->left;
         free_nodes(left);
     }
-    if (current->head->left != NULL) {
-        right = container_of(&(current->head->right), node_t, head);
+    // if (current->head->left != NULL) {
+    if (current->right != NULL) {
+        // right = container_of(&(current->head->right), node_t, head);
+        right = (node_t *)current->right;
         free_nodes(right);
     }
     free(current);

@@ -19,7 +19,9 @@ typedef struct tree_head {
 
 typedef struct node {
     token_t *token;
-    tree_t *head;
+    // tree_t *head;
+    struct node *left;
+    struct node *right;
 } node_t;
 
 /*

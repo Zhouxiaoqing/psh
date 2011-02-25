@@ -40,6 +40,8 @@ _parse_redirection_list(parser_t *p, tokenizer_t *t, node_t *parent);
 static const node_t *
 _parse_command(parser_t *p, tokenizer_t *t, node_t *parent);
 static const node_t *
+_parse_piped_commands(parser_t *p, tokenizer_t *t, node_t *parent);
+static const node_t *
 _parse_piped_command(parser_t *p, tokenizer_t *t, node_t *parent);
 
 /**
@@ -304,13 +306,13 @@ _parse_redirection_list(parser_t *p, tokenizer_t *t, node_t *parent)
 static const node_t *
 _parse_command_element(parser_t *p, tokenizer_t *t, node_t *parent)
 {
-    const token_t *_command_element;
-    const node_t *wer;
+    const token_t *_wer, *_command_element;
+    const node_t *wer, *command_element;
     
-    _command_element = current_token(t);
-    if (!_is_command_element(_command_element))  syntax_error(p, t);
+    _wer = current_token(t);
+    if (!_is_command_element(_wer))  syntax_error(p, t);
     // command_element = init_node(_command_element)
-    switch (_command_element->spec) {
+    switch (_wer->spec) {
     case WORD: case ENV: case LETTER: case ALPHANUM: case NUM:
         // _parse_word(p, t, command_element);
         wer = _parse_word(p, t, init_abstract_node(WORD));
@@ -327,7 +329,14 @@ _parse_command_element(parser_t *p, tokenizer_t *t, node_t *parent)
     default: break;
     }
     
-    create_tree(parent, wer, NULL);
+    _command_element = next_token(t);
+    if (_command_element != NULL && _is_command_element(_command_element))
+        command_element = _parse_command_element(
+            p, t, init_abstract_node(COMMAND_ELEMENT));
+    else
+        command_element = NULL;
+    
+    create_tree(parent, wer, command_element);
     
     return parent;
 }
@@ -336,7 +345,7 @@ _parse_command_element(parser_t *p, tokenizer_t *t, node_t *parent)
  * _parse_command - Parse <command> and make pipe.
  */
 static const node_t *
-_parse_command(parser_t *p, tokenizer_t *t, node_t *parent)
+_parse_piped_command(parser_t *p, tokenizer_t *t, node_t *parent)
 {
     const token_t *_command_element, *_command;
     const node_t *command_element, *command;
@@ -347,7 +356,7 @@ _parse_command(parser_t *p, tokenizer_t *t, node_t *parent)
         p, t, init_abstract_node(COMMAND_ELEMENT));
     _command = next_token(t);
     if (_is_command_element(_command))
-        command = _parse_command(p, t, init_abstract_node(COMMAND));
+        command = _parse_piped_command(p, t, init_abstract_node(COMMAND));
     else
         command = NULL;
     create_tree(parent, command_element, command);
@@ -358,27 +367,27 @@ _parse_command(parser_t *p, tokenizer_t *t, node_t *parent)
 /*
  * _parse_piped_command - Parse <piped_command>
  */
-static const node_t *
-_parse_piped_command(parser_t *p, tokenizer_t *t, node_t *parent)
-{
-    const token_t *_command, *_piped_command;
-    const node_t *command, *piped_command;
+/* static const node_t * */
+/* __parse_piped_command(parser_t *p, tokenizer_t *t, node_t *parent) */
+/* { */
+/*     const token_t *_command, *_piped_command; */
+/*     const node_t *command, *piped_command; */
 
-    _command = current_token(t);
-    if (_is_eol(_command))  return parent;
-    if (!_is_command(_command))  syntax_error(p, t);
-    command = _parse_command(p, t, init_abstract_node(COMMAND));
+/*     _command = current_token(t); */
+/*     if (_is_eol(_command))  return parent; */
+/*     if (!_is_command(_command))  syntax_error(p, t); */
+/*     command = _parse_command(p, t, init_abstract_node(COMMAND)); */
 
-    _piped_command = next_token(t);
-    if (_is_piped_command(_piped_command))
-        piped_command = _parse_piped_command(
-            p, t,init_abstract_node(PIPED_COMMAND));
-    else
-        piped_command = NULL;
-    create_tree(parent, command, piped_command);
+/*     _piped_command = next_token(t); */
+/*     if (_is_piped_command(_piped_command)) */
+/*         piped_command = _parse_piped_command( */
+/*             p, t,init_abstract_node(COMMAND)); */
+/*     else */
+/*         piped_command = NULL; */
+/*     create_tree(parent, command, piped_command); */
 
-    return parent;
-}
+/*     return parent; */
+/* } */
 
 /**
  * parse_input - Parse and set command information to command tables

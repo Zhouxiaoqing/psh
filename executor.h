@@ -35,15 +35,25 @@ void print_error(const char *error_message, node_t *root);
 /*
  * _init_command - initialize command except for I/O fd
  */
-static inline command_t *_init_command(node_t *root)
+static inline void *_init_command(command_t *command)
+{
+    memset(command->cmd, '\0', ELEMENT_MAX);
+    memset(command->argv, '\0', ARG_MAX);
+    command->argc = 0;
+    command->command_flag = false;
+    return command;
+}
+
+/**
+ * init_command - return initialized command
+ */
+static inline command_t *init_command(node_t *root)
 {
     command_t *command = (command_t *) malloc(sizeof(command_t));
     if (command == NULL) {
         print_error("Bad allocation (command).\n", root);
     }
-    // memcpy(command->cmd, '\0', ELEMENT_MAX);
-    // memcpy(command->argv, '\0', ARG_MAX);
-    command->command_flag = false;
+    _init_command(command);
     return command;
 }
 

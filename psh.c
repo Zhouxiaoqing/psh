@@ -63,7 +63,7 @@ int main(int argc, char **argv)
         root = (node_t *)parse_input(p, t);
         eat_root(root);
         finalize(t, p, root);
-        printf("[0;32mpsh-$[0;37m" );
+        printf("[0;32mpsh-$[0;37m " );
     }
     return 0;
 }

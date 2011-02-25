@@ -129,7 +129,8 @@ static inline const bool _is_env_assignment(const token_t *t)
  */
 static inline const bool _is_command_element(const token_t *t)
 {
-    return (_is_word(t) ||
+    return (t->spec == COMMAND_ELEMENT ||
+            _is_word(t) ||
             _is_env_assignment(t) ||
             _is_redirection(t)) ? true : false;
 }
@@ -139,7 +140,8 @@ static inline const bool _is_command_element(const token_t *t)
  */
 static inline const bool _is_command(const token_t *t)
 {
-    return (_is_command_element(t)) ? true : false;
+    // return (_is_command_element(t)) ? true : false;
+    return (t->spec == COMMAND || _is_command_element(t)) ? true : false;
 }
 
 /*
@@ -147,7 +149,8 @@ static inline const bool _is_command(const token_t *t)
  */
 static inline const bool _is_piped_command(const token_t *t)
 {
-    return (_is_command(t)) ? true : false;
+    // return (_is_command(t)) ? true : false;
+    return (t->spec == PIPED_COMMAND || _is_command(t)) ? true : false;
 }
 
 /*

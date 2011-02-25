@@ -19,7 +19,7 @@
 #include "executor.h"
 
 static int _fork_exec(command_t *current_command,
-                      const bool head_flag, const bool tail_flag);
+                      const bool head_flag, const bool tail_flag, node_t *root);
 static void _eat_letter(const node_t *current,
                         command_t *current_command, node_t *parent, node_t *root);
 static void _eat_num(const node_t *current,
@@ -64,7 +64,7 @@ void print_error(const char *error_message, node_t *root)
  * _fork_exec - fork and exec
  */
 static int _fork_exec(command_t *current_command,
-                      const bool head_flag, const bool tail_flag)
+                      const bool head_flag, const bool tail_flag, node_t *root)
 {
     pid_t fork_result, child;
     int next_pipe[2];
@@ -73,39 +73,35 @@ static int _fork_exec(command_t *current_command,
         fork_result = fork();
         switch (fork_result) {
         case -1:
-            fprintf(stderr, "fork failure");
-            exit(EXIT_FAILURE);
+            print_error("fork failure", root);
             break;
         case 0:  // case of child
-            if (head_flag || tail_flag) {
-                if (head_flag)
-                    current_command->input_fd = open("/dev/stdin", O_RDONLY);
-                else
-                    dup2(current_command->input_fd, 0);
-
-                dup2(current_command->input_fd, 0);
+            if (!head_flag) {
+                dup2(current_command->input_fd, STDIN_FILENO);
                 close(current_command->input_fd);
-
-                if (tail_flag) {
-                    close(current_command->output_fd);
-                    current_command->output_fd = open("/dev/stdout", O_WRONLY);
-                } else {
-                    current_command->output_fd = next_pipe[1];
-                }
-                dup2(current_command->output_fd, 1);
-                close(current_command->output_fd);
-
-                current_command->input_fd = next_pipe[0];
+            }            
+            if (tail_flag) {
+                close(next_pipe[1]);
+                current_command->output_fd = open("/dev/stdout", O_WRONLY);
+            } else {
+                current_command->output_fd = next_pipe[1];
             }
+            dup2(current_command->output_fd, STDOUT_FILENO);
+            close(current_command->output_fd);
+            
             execvp(current_command->cmd, current_command->argv);
+            print_error("couldn't execute command.\n", root);
             break;
         default:  // case of parent
-            child = wait((int *) 0);
+            close(next_pipe[1]);
+            child = wait(NULL);
+            if (!tail_flag)
+                current_command->input_fd = next_pipe[0];
             break;
         }
+        
     } else {
-        fprintf(stderr, "pipe creation failure");
-        exit(EXIT_FAILURE);
+        print_error("pipe creation failure", root);
     }
 
     return 0;
@@ -189,11 +185,11 @@ static void _eat_env(const node_t *current,
  */
 static void _eat_word(node_t *current, command_t *current_command,
                       node_t *root) {
-    const node_t *elh = container_of(&(current->head->left), node_t, head);
-    node_t *word = container_of(&(current->head->right), node_t, head);
+    const node_t *elh = current->left;  // container_of(&(current->head->left), node_t, head);
+    node_t *word = current->right;  // container_of(&(current->head->right), node_t, head);
 
-    if (word != NULL)  return;
-    switch (word->token->spec) {
+    if (elh == NULL)  return;
+    switch (elh->token->spec) {
     case ENV:
         _eat_env(elh, current_command, current, root);
         break;
@@ -215,10 +211,14 @@ static void _eat_word(node_t *current, command_t *current_command,
     
     if (!current_command->command_flag) {
         strncat(current_command->cmd, current->token->element, ELEMENT_MAX);
+        if (current_command->argc < ARG_MAX)
+            current_command->argv[current_command->argc++] = current->token->element;
+        else
+            print_error("too many arguments.", root);
         current_command->command_flag = true;
     } else {
         if (current_command->argc < ARG_MAX)
-            current_command->argv[++current_command->argc] = current->token->element;
+            current_command->argv[current_command->argc++] = current->token->element;
         else
             print_error("too many arguments.", root);
     }
@@ -245,7 +245,7 @@ static void _eat_env_assignment(const node_t *current,
 static void _eat_redirection_out(const node_t *current,
                                  command_t *current_command, node_t *root) {
     const node_t *redirection_out = current;
-    const node_t *word = container_of(&(current->head->left), node_t, head);
+    const node_t *word = current->left;  // container_of(&(current->head->left), node_t, head);
     const char* filename;
     char *mode;
     FILE *stream;
@@ -279,7 +279,7 @@ static void _eat_redirection_out(const node_t *current,
 static void _eat_redirection_in(const node_t *current,
                                 command_t *current_command, node_t *root) {
     const node_t *redirection_in = current;
-    const node_t *word = container_of(&(current->head->left), node_t, head);
+    const node_t *word = current->left;  // container_of(&(current->head->left), node_t, head);
     const char* filename;
     FILE *stream;
     
@@ -301,7 +301,7 @@ static void _eat_redirection_in(const node_t *current,
 static void _eat_redirection(const node_t *current,
                              command_t* current_command, node_t *root) {
     const node_t *redirect_in_out = 
-        container_of(&(current->head->left), node_t, head);
+        current->left;  // container_of(&(current->head->left), node_t, head);
     
     switch (redirect_in_out->token->spec) {
     case REDIRECT_IN:
@@ -320,9 +320,9 @@ static void _eat_redirection(const node_t *current,
  */
 static void _eat_redirection_list(const node_t *current,
                                   command_t *current_command, node_t *root) {
-    const node_t *redirection = container_of(&(current->head->left), node_t, head);
+    const node_t *redirection = current->left;  // container_of(&(current->head->left), node_t, head);
     const node_t *redirection_list = 
-        container_of(&(current->head->right), node_t, head);
+        current->right;  // container_of(&(current->head->right), node_t, head);
 
     _eat_redirection(redirection, current_command, root);
     
@@ -335,9 +335,9 @@ static void _eat_redirection_list(const node_t *current,
  */
 static void _eat_command_element(const node_t *current,
                                  command_t *current_command, node_t *root) {
-    const node_t *wer = container_of(&(current->head->left), node_t, head);
+    const node_t *wer = current->left;  // container_of(&(current->head->left), node_t, head);
     const node_t *command_element =
-        container_of(&(current->head->right), node_t, head);
+        current->right;  // container_of(&(current->head->right), node_t, head);
 
     if (wer == NULL)  return;
     switch (wer->token->spec) {
@@ -366,8 +366,8 @@ static void _eat_command(const node_t *current, command_t *current_command,
                          node_t *root)
 {
     const node_t *command_element, *command;
-    command_element = container_of(&(current->head->left), node_t, head);
-    command = container_of(&(current->head->right), node_t, head);
+    command_element = current->left;  // container_of(&(current->head->left), node_t, head);
+    command = current->right;  // container_of(&(current->head->right), node_t, head);
     
     _eat_command_element(command_element, current_command, root);
     if (command != NULL && _is_command(command->token))
@@ -377,25 +377,22 @@ static void _eat_command(const node_t *current, command_t *current_command,
 /*
  * _eat_piped_command - eat <piped_command>
  */
-static void _eat_piped_command(const node_t *current,
-                               command_t *current_command, const bool head_flag,
-                               node_t *root)
+static void _eat_piped_command(const node_t *current, command_t *current_command,
+                               const bool head_flag, node_t *root)
 {
-    const node_t *command, *piped_command;
-    command = container_of(&(current->head->left), node_t, head);
-    piped_command = container_of(&(current->head->right), node_t, head);
-
-    if (_is_eol(command->token))  return;
-    _eat_command(command, current_command, root);
-    if (piped_command != NULL &&
-        _is_piped_command(piped_command->token)) {
-        _fork_exec(current_command, head_flag, false);
+    const node_t *command_element, *command;
+    command_element = current->left;  // container_of(&(current->head->left), node_t, head);
+    command = current->right;  // container_of(&(current->head->right), node_t, head);
+    if (command_element != NULL && _is_eol(command_element->token))  return;
+    _eat_command_element(command_element, current_command, root);
+    if (command != NULL && _is_command(command->token)) {
+        _fork_exec(current_command, head_flag, false, root);
+        // current_command = _init_command(root);
+        _init_command(current_command);
+        _eat_piped_command(command, current_command, false, root);
     } else {
-        _fork_exec(current_command, head_flag, true);
+        _fork_exec(current_command, head_flag, true, root);
     }
-    current_command = _init_command(root);
-    _eat_piped_command(piped_command, current_command, false, root);
-    free(current_command);
 }
 
 /**
@@ -404,7 +401,7 @@ static void _eat_piped_command(const node_t *current,
  */
 void eat_root(node_t *root)
 {
-    command_t *current_command = _init_command(root);
+    command_t *current_command = init_command(root);
     _eat_piped_command(root, current_command, true, root);
     free(current_command);
 }
