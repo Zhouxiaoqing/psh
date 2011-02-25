@@ -257,10 +257,10 @@ _parse_redirection(parser_t *p, tokenizer_t *t, node_t *parent)
     if (!_is_redirection(_redirection))  syntax_error(p, t);
     switch (_redirection->spec) {
     case REDIRECT_OUT: case REDIRECT_OUT_APPEND:
-        redirection = _parse_redirect_in(p, t, init_abstract_node(REDIRECTION));
+        redirection = _parse_redirect_out(p, t, init_abstract_node(REDIRECTION));
         break;
     case REDIRECT_IN:
-        redirection = _parse_redirect_out(
+        redirection = _parse_redirect_in(
             p, t, init_abstract_node(REDIRECTION));
         break;
     default:
