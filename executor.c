@@ -387,7 +387,6 @@ static void _eat_piped_command(const node_t *current, command_t *current_command
     _eat_command_element(command_element, current_command, root);
     if (command != NULL && _is_command(command->token)) {
         _fork_exec(current_command, head_flag, false, root);
-        // current_command = _init_command(root);
         _init_command(current_command);
         _eat_piped_command(command, current_command, false, root);
     } else {

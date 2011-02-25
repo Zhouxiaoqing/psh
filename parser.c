@@ -130,26 +130,20 @@ static const node_t *_parse_word(parser_t *p, tokenizer_t *t, node_t *parent)
 
     _elh = current_token(t);
     if (!_is_word(_elh))  syntax_error(p, t);
-    // elh = init_abstract_node(WORD);
     switch (_elh->spec) {
     case ENV:
-        // _parse_env(p, t, init_abstract_node(WORD));
         elh = _parse_env(p, t);
         break;
     case LETTER:
-        // _parse_letter(p, t, init_abstract_node(WORD));
         elh = _parse_letter(p, t);
         break;
     case ALPHANUM:
-        // _parse_alphanum(p, t, init_abstract_node(WORD));
         elh = _parse_alphanum(p, t);
         break;
     case NUM:
-        // _parse_num(p, t, init_abstract_node(WORD));
         elh = _parse_num(p, t);
         break;
     case HOME:
-        // _parse_home(p, t, init_abstract_node(WORD));
         elh = _parse_home(p, t, parent);
         break;
     default:
@@ -311,19 +305,15 @@ _parse_command_element(parser_t *p, tokenizer_t *t, node_t *parent)
     
     _wer = current_token(t);
     if (!_is_command_element(_wer))  syntax_error(p, t);
-    // command_element = init_node(_command_element)
     switch (_wer->spec) {
     case WORD: case ENV: case LETTER: case ALPHANUM: case NUM:
-        // _parse_word(p, t, command_element);
         wer = _parse_word(p, t, init_abstract_node(WORD));
         break;
     case ENV_ASSIGNMENT:
-        // _parse_env_assignment(p, t, command_element);
         wer = _parse_env_assignment(p, t, init_abstract_node(ENV_ASSIGNMENT));
         break;
     case REDIRECT_OUT: case REDIRECT_OUT_APPEND:
     case REDIRECT_IN:
-        // _parse_redirection_list(p, t, command_element);
         wer = _parse_redirection_list(p, t, init_abstract_node(REDIRECTION_LIST));
         break;
     default: break;
@@ -363,31 +353,6 @@ _parse_piped_command(parser_t *p, tokenizer_t *t, node_t *parent)
     
     return parent;
 }
-
-/*
- * _parse_piped_command - Parse <piped_command>
- */
-/* static const node_t * */
-/* __parse_piped_command(parser_t *p, tokenizer_t *t, node_t *parent) */
-/* { */
-/*     const token_t *_command, *_piped_command; */
-/*     const node_t *command, *piped_command; */
-
-/*     _command = current_token(t); */
-/*     if (_is_eol(_command))  return parent; */
-/*     if (!_is_command(_command))  syntax_error(p, t); */
-/*     command = _parse_command(p, t, init_abstract_node(COMMAND)); */
-
-/*     _piped_command = next_token(t); */
-/*     if (_is_piped_command(_piped_command)) */
-/*         piped_command = _parse_piped_command( */
-/*             p, t,init_abstract_node(COMMAND)); */
-/*     else */
-/*         piped_command = NULL; */
-/*     create_tree(parent, command, piped_command); */
-
-/*     return parent; */
-/* } */
 
 /**
  * parse_input - Parse and set command information to command tables

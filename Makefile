@@ -14,7 +14,7 @@ all:	psh
 psh:	psh.o tree.o tokenizer.o parser.o executor.o
 		$(CC) $(CFLAGS) -o $(TARGET) *.o
 
-debug:  clean psh.o tree.o tokenizer.o parser.o executor.o
+debug:  psh.o tree.o tokenizer.o parser.o executor.o
 		$(CC) $(CFLAGS_DEBUG) -o $(TARGET) *.o
 
 clean:

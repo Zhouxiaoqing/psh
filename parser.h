@@ -14,24 +14,8 @@
 #include "tokenizer.h"
 #include "tree.h"
 
-/* typedef struct redirection { */
-/*     bool input; */
-/*     char src[ELEMENT_MAX]; */
-/*     char dst[ELEMENT_MAX]; */
-/* } redirection_t; */
-
-/* typedef struct command { */
-/*     char cmd[ELEMENT_MAX]; */
-/*     redirection_t redirection[ELEMENT_MAX]; */
-/*     char args[ARG_MAX]; */
-/*     bool command_flag; */
-/* } command_t; */
-
 typedef struct parser {
     node_t *root;
-    int args_count;
-    // int p;  // the number of current pipe
-    // command_t command[PIPE_MAX];
 } parser_t;
 
 /*

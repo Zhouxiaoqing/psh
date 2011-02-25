@@ -272,10 +272,6 @@ static const token_t *__scan_env(tokenizer_t *t, char *key)
     case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
     case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
     case 'V': case 'W': case 'X': case 'Y': case 'Z': 
-    /*case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
-    case '*': case '+': case ',': case '-': case '.':  case '/': case ':':
-    case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
-    case '^': case '_': case '`': case '{':  case '}':*/
         strncat(key, &(t->c), 1);
         t->c = _getc(t->input);
         __scan_env(t, key);
