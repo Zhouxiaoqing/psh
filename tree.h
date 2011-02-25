@@ -35,7 +35,8 @@ typedef struct node {
  * _is_abstract_node - check whether the node is abstract node or not.
  */
 static inline bool _is_abstract_node(const node_t *node) {
-    return (node->token == NULL)? true : false;
+    // return (node->token == NULL)? true : false;
+    return (strlen(node->token->element) == 0)? true : false;
 }
 
 /**

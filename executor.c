@@ -90,7 +90,7 @@ static int _fork_exec(command_t *current_command,
             close(current_command->output_fd);
             
             execvp(current_command->cmd, current_command->argv);
-            print_error("couldn't execute command.\n", root);
+            print_error("psh: command not found.\n", root);
             break;
         default:  // case of parent
             close(next_pipe[1]);
@@ -265,7 +265,7 @@ static void _eat_redirection_out(const node_t *current,
         const char* streamname = redirection_out->token->element;
         stream = fopen(streamname, mode);
     } else {
-        stream = stdin;
+        stream = stdout;
     }
     filename = word->token->element;
     if (!freopen(filename, mode, stream)) {
@@ -347,6 +347,8 @@ static void _eat_command_element(const node_t *current,
     case ENV_ASSIGNMENT:
         _eat_env_assignment(wer, current_command, root);
         break;
+    case REDIRECTION_LIST:
+    case REDIRECTION:
     case REDIRECT_IN:
     case REDIRECT_OUT: case REDIRECT_OUT_APPEND:
         _eat_redirection_list(wer, current_command, root);
