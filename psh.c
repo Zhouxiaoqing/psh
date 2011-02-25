@@ -7,8 +7,10 @@
  * @author: Taku Fukushima <tfukushima@dcl.info.waseda.ac.jp>
  */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -17,6 +19,8 @@
 
 #include "consts.h"
 #include "executor.h"
+
+char *readline(const char *prompt);
 
 static const char *logo[] = {
     "==========================\n",
@@ -53,17 +57,24 @@ int main(int argc, char **argv)
     tokenizer_t *t;
     parser_t *p;
     node_t *root;
-    char input[INPUT_MAX];
+    // char input[INPUT_MAX], prompt[100];
+    char *input;
+    char prompt[100];
     
     say_hello();
-    printf("[0;32mpsh-$[0;37m ");
-    while (*fgets(input, INPUT_MAX, stdin)) {
+    sprintf(prompt, "%s [0;32m%s$[0;37m ",
+            getenv("USER"), getcwd(NULL, 1024));
+    while (input = readline(prompt)) {
+        rl_bind_key('\t', rl_complete);
+        add_history(input);
         t = init_tokenizer(input);
         p = init_parser();
         root = (node_t *)parse_input(p, t);
         eat_root(root);
         finalize(t, p, root);
-        printf("[0;32mpsh-$[0;37m " );
+        sprintf(prompt, "%s [0;32m%s$[0;37m ",
+                getenv("USER"), getcwd(NULL, 1024));
+        // printf("[0;32mpsh-$[0;37m " );
     }
     return 0;
 }

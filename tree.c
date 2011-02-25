@@ -50,6 +50,7 @@ static node_t *_init_node(const token_t *origin)
     node->left = NULL;
     node->right = NULL;
     token->spec = origin->spec;
+    memset(token->element, '\0', ELEMENT_MAX);
     strncpy(token->element, origin->element, strlen(origin->element));
     node->token = token;
     // free(origin);
@@ -78,7 +79,6 @@ node_t *init_root(node_t *root)
         print_error("Bad allocation (token) \n", root);
     }
     token->spec = PIPED_COMMAND;
-
     return init_node(token);
 }
 
@@ -96,6 +96,7 @@ node_t *init_abstract_node(const token_spec_t spec)
         exit(EXIT_FAILURE);
     }
     token->spec = spec;
+    memset(token->element, '\0', ELEMENT_MAX);
     node = _init_node(token);
     // free(token);
     
