@@ -3,6 +3,19 @@ psh - Naive shell with recursive descent parser
 
 Exercise on C and system programming.
 
+
+Prerequisites
+-------------
+
+* [GNU readline](http://cnswww.cns.cwru.edu/php/chet/readline/)
+
+
+Build
+------
+
+        $ make clean; make all
+        $ ./psh
+
 Goal
 -----
 
