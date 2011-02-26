@@ -25,6 +25,8 @@ typedef struct command {
     bool command_flag;
     int input_fd;
     int output_fd;
+    // FILE *ifstream[ELEMENT_MAX];
+    // FILE *ofstream[ELEMENT_MAX];
 } command_t;
 
 /**

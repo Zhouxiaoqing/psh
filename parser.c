@@ -67,7 +67,7 @@ void syntax_error(parser_t *p, tokenizer_t *t)
 {
     fprintf(stderr, "syntax error: \n");
     free(t);
-    free_nodes(p->root);
+    free_nodes(p->root, p->root);
     free(p);
     exit(EXIT_FAILURE);
 }

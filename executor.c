@@ -34,9 +34,11 @@ static void _eat_env(const node_t *current,
 static void _eat_word(node_t *current, command_t *current_command, node_t *root);
 static void _eat_env_assignment(const node_t *current,
                                 command_t *current_command, node_t *root);
-static void _eat_redirection_out(const node_t *current, command_t *current_command,
+// static void _eat_redirection_out(const node_t *current, command_t *current_command,
+static void _eat_redirection_out(node_t *current, command_t *current_command,
                                  node_t *root);
-static void _eat_redirection_in(const node_t *current, command_t *current_command,
+// static void _eat_redirection_in(const node_t *current, command_t *current_command,
+static void _eat_redirection_in(node_t *current, command_t *current_command,
                                 node_t *root);
 static void _eat_redirection(const node_t *current, command_t *current_command,
                              node_t *root);
@@ -56,7 +58,7 @@ static void _eat_piped_command(const node_t *current,
 void print_error(const char *error_message, node_t *root)
 {
     fprintf(stderr, error_message);
-    free_nodes(root);
+    free_nodes(root, root);
     exit(EXIT_FAILURE);
 }
 
@@ -97,6 +99,12 @@ static int _fork_exec(command_t *current_command,
             child = wait(NULL);
             if (!tail_flag)
                 current_command->input_fd = next_pipe[0];
+            /* // if (current_command->ifstream) { */
+            /* if (!freopen("/dev/stdin", "r", stdin)) */
+            /*     print_error("could not initialize stdin.\n", root); */
+            /* // if (current_command->ofstream) { */
+            /* if (!freopen("/dev/stdout", "w", stdout)) */
+            /*     print_error("could not initialize stdout.\n", root); */
             break;
         }
         
@@ -242,7 +250,8 @@ static void _eat_env_assignment(const node_t *current,
 /*
  * _eat_redirection_out - eat <redirection_out>
  */
-static void _eat_redirection_out(const node_t *current,
+// static void _eat_redirection_out(const node_t *current,
+static void _eat_redirection_out(node_t *current,
                                  command_t *current_command, node_t *root) {
     const node_t *redirection_out = current;
     const node_t *word = current->left;  // container_of(&(current->head->left), node_t, head);
@@ -263,11 +272,14 @@ static void _eat_redirection_out(const node_t *current,
 
     if (!_is_abstract_node(redirection_out)) {
         const char* streamname = redirection_out->token->element;
-        stream = fopen(streamname, mode);
+        int streamfd = atoi(streamname);
+        stream = fdopen(streamfd, mode);
     } else {
         stream = stdout;
     }
+    current->oldstreamfd = fcntl(fileno(stream), F_DUPFD, 2);
     filename = word->token->element;
+
     if (!freopen(filename, mode, stream)) {
         print_error("could not redirect stdout from file.\n", root);
     }
@@ -276,7 +288,8 @@ static void _eat_redirection_out(const node_t *current,
 /*
  * _eat_redirection_in - eat <redirection_in>
  */
-static void _eat_redirection_in(const node_t *current,
+// static void _eat_redirection_in(const node_t *current,
+static void _eat_redirection_in(node_t *current,
                                 command_t *current_command, node_t *root) {
     const node_t *redirection_in = current;
     const node_t *word = current->left;  // container_of(&(current->head->left), node_t, head);
@@ -285,11 +298,16 @@ static void _eat_redirection_in(const node_t *current,
     
     if (!_is_abstract_node(redirection_in)) {
         const char* streamname = redirection_in->token->element;
-        stream = fopen(streamname, "r");
+        int streamfd = atoi(streamname);
+        // stream = fopen(streamname, "r");
+        stream = fdopen(streamfd, "r");
     } else {
         stream = stdin;
     }
+    
+    current->oldstreamfd = fcntl(fileno(stream), F_DUPFD, 2);
     filename = word->token->element;
+
     if (!freopen(filename, "r", stream)) {
         print_error("could not redirect stdin from file. \n", root);
     }
@@ -300,7 +318,8 @@ static void _eat_redirection_in(const node_t *current,
  */
 static void _eat_redirection(const node_t *current,
                              command_t* current_command, node_t *root) {
-    const node_t *redirect_in_out = 
+    // const node_t *redirect_in_out = 
+    node_t *redirect_in_out = 
         current->left;  // container_of(&(current->head->left), node_t, head);
     
     switch (redirect_in_out->token->spec) {

@@ -12,6 +12,7 @@
 #include <stdlib.h>
 
 #include "tokenizer.h"
+#include "parser.h"
 #include "tree.h"
 
 /*
@@ -119,25 +120,73 @@ node_t *create_tree(node_t *parent, const node_t *left, const node_t *right)
     return parent;
 }
 
+void _init_redirect_in_stream(node_t *current) {
+    node_t *word = current->left;
+    FILE *stream;
+    int streamfd;
+    const char *streamname = word->token->element;
+    if (!_is_abstract_node(current)) {
+        stream = fopen(streamname, "r");
+    } else {
+        stream = stdin;
+    }
+    streamfd = fileno(stream);
+    dup2(current->oldstreamfd, streamfd);
+    close(current->oldstreamfd);
+}
+
+void _init_redirect_out_stream(node_t *current) {
+    node_t *word = current->left;
+    FILE *stream;
+    int streamfd;
+    char *mode;
+    const char *streamname = current->token->element;
+    switch (current->token->spec) {
+    case REDIRECT_OUT:
+        mode = "w+";
+        break;
+    case REDIRECT_OUT_APPEND:
+        mode = "a+";
+        break;
+    default:
+        break;
+    }
+    if (!_is_abstract_node(current)) {
+        stream = fopen(streamname, mode);
+    } else {
+        stream = stdout;
+    }
+    streamfd = fileno(stream);
+    dup2(current->oldstreamfd, streamfd);
+    close(current->oldstreamfd);
+}
+
+void _init_redirect_stream(node_t *current) {
+    if (_is_redirect_in(current->token))
+        _init_redirect_in_stream(current);
+    if (_is_redirect_out(current->token))
+        _init_redirect_out_stream(current);
+}
+
 /**
  * free_nodes - free nodes which are children of `current` node recursively
  * @current: current node which will be freed
  */
-void free_nodes(node_t *current)
+void free_nodes(node_t *current, node_t *root)
 {
     node_t *left, *right;
-
     // if (current->head->left != NULL) {
+    _init_redirect_stream(current);
     if (current->left != NULL) {
         // left = container_of(&(current->head->left), node_t, head);
         left = (node_t *)current->left;
-        free_nodes(left);
+        free_nodes(left, root);
     }
     // if (current->head->left != NULL) {
     if (current->right != NULL) {
         // right = container_of(&(current->head->right), node_t, head);
         right = (node_t *)current->right;
-        free_nodes(right);
-    }
+        free_nodes(right, root);
+    }    
     free(current);
 }
