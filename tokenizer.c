@@ -187,6 +187,15 @@ static const token_t *_scan_alphanum(tokenizer_t *t)
         t->c = _getc(t->input);
         _scan_alphanum(t);
         break;
+    case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
+    case '*': case '+': case ',': case '-': case '.': case '/': case ':':
+    case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
+    case '^': case '_': case '`': case '{': case '}': case '~':
+        t->token.spec = LETTER;
+        _append_token(&(t->token), &(t->c));
+        t->c = _getc(t->input);
+        _scan_letter(t);
+        break;
     default: break;
     }
     
@@ -236,9 +245,6 @@ static const token_t *_scan_num(tokenizer_t *t)
         t->c = _getc(t->input);
         break;
     case '<':
-        /* if (t->token.spec == REDIRECT_IN)
-            t->token.spec = REDIRECT_IN_APPEND;
-            else*/
         t->token.spec = REDIRECT_IN;
         t->c = _getc(t->input);
         break;
