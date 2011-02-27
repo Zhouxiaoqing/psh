@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -O2 -lreadline
-CFLAGS_DEBUG = -g -lreadline
+CFLAGS_DEBUG = -g -lreadline -Wall
 TARGET = psh
 
 check-syntax:
