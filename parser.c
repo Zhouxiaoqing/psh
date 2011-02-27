@@ -132,6 +132,12 @@ static const node_t *_parse_word(parser_t *p, tokenizer_t *t, node_t *parent)
     case ENV:
         elh = _parse_env(p, t);
         break;
+    case ENV_WORD:
+        elh = _parse_env(p, t);
+        _word = next_token(t);
+        if (!_is_word(_word))  syntax_error(p, t);
+        word = _parse_word(p, t, init_abstract_node(WORD));
+        break;
     case LETTER:
         elh = _parse_letter(p, t);
         break;

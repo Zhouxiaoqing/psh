@@ -317,7 +317,11 @@ static const token_t *__scan_env(tokenizer_t *t, char *key)
         t->c = _getc(t->input);
         __scan_env(t, key);
         break;
+    case ' ': case '\t': case '\n': case '\0':
+        strncat(t->token.element, key, strlen(key));
+        break;
     case '}':
+        t->c = _getc(t->input);
         /* if (t->token.spec != ENV) {
            strncat(t->token.element, key, strlen(key));
            t->c = _getc(t->input);
@@ -326,9 +330,10 @@ static const token_t *__scan_env(tokenizer_t *t, char *key)
         // t->c = _getc(t->input);
         // break;
     default:
+        if (t->token.spec == ENV)  t->token.spec = ENV_WORD;
         strncat(t->token.element, key, strlen(key));
-        t->c = _getc(t->input);
-        __scan_env(t, key);
+        // t->c = _getc(t->input);
+        // __scan_env(t, key);
             /*
             t->token.spec = WORD;
             char *value = getenv(key);
@@ -497,7 +502,7 @@ const token_t  *_next_token(tokenizer_t *t)
     case '$':
         t->token.spec = ENV;
         _scan_env(t);
-        t->c = _getc(t->input);
+        // t->c = _getc(t->input);
         break;
     case '~':
         t->token.spec = HOME;

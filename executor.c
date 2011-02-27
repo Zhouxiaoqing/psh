@@ -176,6 +176,7 @@ static void _eat_env(const node_t *current,
     const char *word;
 
     word = getenv(env->token->element);
+    if (word == NULL)  return;
     if (_is_word(parent->token)) {
         strncat(parent->token->element, word, strlen(word));
     } else {
@@ -193,7 +194,7 @@ static void _eat_word(node_t *current, command_t *current_command,
 
     if (elh == NULL)  return;
     switch (elh->token->spec) {
-    case ENV:
+    case ENV: case ENV_WORD:
         _eat_env(elh, current_command, current, root);
         break;
     case LETTER:
