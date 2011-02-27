@@ -99,17 +99,11 @@ static int _fork_exec(command_t *current_command,
             child = wait(NULL);
             if (!tail_flag)
                 current_command->input_fd = next_pipe[0];
-            /* // if (current_command->ifstream) { */
-            /* if (!freopen("/dev/stdin", "r", stdin)) */
-            /*     print_error("could not initialize stdin.\n", root); */
-            /* // if (current_command->ofstream) { */
-            /* if (!freopen("/dev/stdout", "w", stdout)) */
-            /*     print_error("could not initialize stdout.\n", root); */
             break;
         }
         
     } else {
-        print_error("pipe creation failure", root);
+        print_error("psh: pipe creation failure", root);
     }
 
     return 0;
@@ -184,7 +178,7 @@ static void _eat_env(const node_t *current,
     if (_is_word(parent->token)) {
         strncat(parent->token->element, word, strlen(word));
     } else {
-        fprintf(stderr,"error: cannot eat env %s\n", env->token->element);
+        fprintf(stderr,"psh: error: cannot eat env %s\n", env->token->element);
     }
 }
 
@@ -222,13 +216,13 @@ static void _eat_word(node_t *current, command_t *current_command,
         if (current_command->argc < ARG_MAX)
             current_command->argv[current_command->argc++] = current->token->element;
         else
-            print_error("too many arguments.", root);
+            print_error("psh: too many arguments.", root);
         current_command->command_flag = true;
     } else {
         if (current_command->argc < ARG_MAX)
             current_command->argv[current_command->argc++] = current->token->element;
         else
-            print_error("too many arguments.", root);
+            print_error("psh: too many arguments.", root);
     }
 
     if (word != NULL && _is_word(word->token))
@@ -244,7 +238,7 @@ static void _eat_env_assignment(const node_t *current,
     
     char *assign = env_assignment->token->element;
     if (!putenv(assign))
-        print_error("can't assgin environment variable.\n", root);
+        print_error("psh: can't assgin environment variable.\n", root);
 }
 
 /*
@@ -260,11 +254,11 @@ static void _eat_redirection_out(node_t *current,
     FILE *stream;
 
     switch (redirection_out->token->spec) {
-    case REDIRECT_OUT:
-        mode = "w+";
+    case REDIRECT_OUT: case REDIRECT_OUT_COMPOSITION:
+        mode = "w";
         break;
     case REDIRECT_OUT_APPEND:
-        mode = "a+";
+        mode = "a";
         break;
     default:
         break;
@@ -277,11 +271,19 @@ static void _eat_redirection_out(node_t *current,
     } else {
         stream = stdout;
     }
-    current->oldstreamfd = fcntl(fileno(stream), F_DUPFD, 2);
+    current->oldstreamfd = fcntl(fileno(stream), F_DUPFD, STDIN_FILENO);
     filename = word->token->element;
 
-    if (!freopen(filename, mode, stream)) {
-        print_error("could not redirect stdout from file.\n", root);
+    if (redirection_out->token->spec == REDIRECT_OUT_COMPOSITION) {
+        int redirectfd = atoi(filename);
+        // fclose(stream);
+        // stream = fdopen(fd, mode);
+        dup2(redirectfd, fileno(stream));
+        fclose(stream);
+    } else {
+        if (!freopen(filename, mode, stream)) {
+            print_error("psh: could not redirect stdout from file.\n", root);
+        }
     }
 }
 
@@ -295,6 +297,7 @@ static void _eat_redirection_in(node_t *current,
     const node_t *word = current->left;  // container_of(&(current->head->left), node_t, head);
     const char* filename;
     FILE *stream;
+    char *mode;
     
     if (!_is_abstract_node(redirection_in)) {
         const char* streamname = redirection_in->token->element;
@@ -305,11 +308,20 @@ static void _eat_redirection_in(node_t *current,
         stream = stdin;
     }
     
-    current->oldstreamfd = fcntl(fileno(stream), F_DUPFD, 2);
+    switch (redirection_in->token->spec) {
+    case REDIRECT_IN:
+        mode = "r";
+        break;
+    case REDIRECT_IN_OUT:
+        mode = "r+";
+    default:  break;
+    }
+    
+    current->oldstreamfd = fcntl(fileno(stream), F_DUPFD, STDIN_FILENO);
     filename = word->token->element;
 
-    if (!freopen(filename, "r", stream)) {
-        print_error("could not redirect stdin from file. \n", root);
+    if (!freopen(filename, mode, stream)) {
+        print_error("psh: could not redirect stdin from file. \n", root);
     }
 }
 
@@ -323,10 +335,11 @@ static void _eat_redirection(const node_t *current,
         current->left;  // container_of(&(current->head->left), node_t, head);
     
     switch (redirect_in_out->token->spec) {
-    case REDIRECT_IN:
+        // case REDIRECT_IN: case REDIRECT_IN_OUT:
+    case REDIRECT_IN_PATTERN:
         _eat_redirection_in(redirect_in_out, current_command, root);
         break;
-    case REDIRECT_OUT: case REDIRECT_OUT_APPEND:
+    case REDIRECT_OUT_PATTERN:
         _eat_redirection_out(redirect_in_out, current_command, root);
         break;
     default:
@@ -360,16 +373,17 @@ static void _eat_command_element(const node_t *current,
 
     if (wer == NULL)  return;
     switch (wer->token->spec) {
-    case WORD:
+    case WORD_PATTERN:
         _eat_word((node_t *)wer, current_command, root);
         break;
     case ENV_ASSIGNMENT:
         _eat_env_assignment(wer, current_command, root);
         break;
-    case REDIRECTION_LIST:
-    case REDIRECTION:
-    case REDIRECT_IN:
-    case REDIRECT_OUT: case REDIRECT_OUT_APPEND:
+    /* case REDIRECTION_LIST: */
+    /* case REDIRECTION: */
+    /* case REDIRECT_IN:  case REDIRECT_IN_OUT: */
+    /* case REDIRECT_OUT: case REDIRECT_OUT_APPEND:  case REDIRECT_OUT_COMPOSITION: */
+    case REDIRECT_PATTERN:
         _eat_redirection_list(wer, current_command, root);
         break;
     default:

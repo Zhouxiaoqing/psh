@@ -14,6 +14,19 @@
 #include "tokenizer.h"
 #include "tree.h"
 
+#define REDIRECT_PATTERN   \
+    REDIRECTION_LIST: case REDIRECTION: case REDIRECT_IN: case REDIRECT_IN_OUT:  \
+ case REDIRECT_OUT: case REDIRECT_OUT_APPEND: case REDIRECT_OUT_COMPOSITION
+
+#define REDIRECT_IN_PATTERN   \
+    REDIRECT_IN: case REDIRECT_IN_OUT
+
+#define REDIRECT_OUT_PATTERN  \
+    REDIRECT_OUT: case REDIRECT_OUT_APPEND: case REDIRECT_OUT_COMPOSITION
+
+#define WORD_PATTERN  \
+    WORD: case ENV: case LETTER: case ALPHANUM: case NUM: case HOME
+
 typedef struct parser {
     node_t *root;
 } parser_t;
@@ -72,7 +85,7 @@ static inline const bool _is_word(const token_t *t)
 static inline const bool _is_redirect_in(const token_t *t)
 {
     return (t->spec == REDIRECT_IN ||
-            t->spec == REDIRECT_IN_COMPOSITION) ? true : false;
+            t->spec == REDIRECT_IN_OUT) ? true : false;
 }
 
 /*
@@ -81,6 +94,7 @@ static inline const bool _is_redirect_in(const token_t *t)
 static inline const bool _is_redirect_out(const token_t *t)
 {
     return (t->spec == REDIRECT_OUT ||
+            t->spec == REDIRECT_OUT_COMPOSITION ||
             t->spec == REDIRECT_OUT_APPEND) ? true : false;
 }
 

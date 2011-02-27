@@ -225,8 +225,8 @@ static const token_t *_scan_num(tokenizer_t *t)
     case 'V': case 'W': case 'X': case 'Y': case 'Z': 
         t->token.spec = ALPHANUM;
         _append_token(&(t->token), &(t->c));
-        _scan_alphanum(t);
         t->c = _getc(t->input);
+        _scan_alphanum(t);
         break;
     case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
     case '*': case '+': case ',': case '-': case '.': case '/': case ':':
@@ -238,15 +238,18 @@ static const token_t *_scan_num(tokenizer_t *t)
         _scan_letter(t);
         break;
     case '>':
-        if (t->token.spec == REDIRECT_OUT)
-            t->token.spec = REDIRECT_OUT_APPEND;
-        else
-            t->token.spec = REDIRECT_OUT;
-        t->c = _getc(t->input);
+        /* if (t->token.spec == REDIRECT_OUT) */
+        /*     t->token.spec = REDIRECT_OUT_APPEND; */
+        /* else */
+        /*     t->token.spec = REDIRECT_OUT; */
+        t->token.spec = REDIRECT_OUT;
+        _scan_redirect_out(t);
+        // t->c = _getc(t->input);
         break;
     case '<':
         t->token.spec = REDIRECT_IN;
-        t->c = _getc(t->input);
+        _scan_redirect_in(t);
+        // t->c = _getc(t->input);
         break;
     default: break;
     }
@@ -368,9 +371,9 @@ static const token_t *_scan_redirect_in(tokenizer_t *t)
         t->token.spec = REDIRECT_IN;
         t->c = _getc(t->input);
         switch (t->c) {
-        case '&':
-            t->token.spec = REDIRECT_IN_COMPOSITION;
-            t->c = _getc(t->input);
+        case '>':
+            t->token.spec = REDIRECT_IN_OUT;
+            // t->c = _getc(t->input);
             break;
         default: break;
         }
@@ -392,11 +395,11 @@ static const token_t *_scan_redirect_out(tokenizer_t *t)
         switch (t->c) {
         case '>':
             t->token.spec = REDIRECT_OUT_APPEND;
-            t->c = _getc(t->input);
+            // t->c = _getc(t->input);
             break;
         case '&':
             t->token.spec = REDIRECT_OUT_COMPOSITION;
-            t->c = _getc(t->input);
+            // t->c = _getc(t->input);
             break;
         default: break;
         }

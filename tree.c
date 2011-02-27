@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "tokenizer.h"
 #include "parser.h"
@@ -50,6 +51,7 @@ static node_t *_init_node(const token_t *origin)
     // _init_tree_head(node);
     node->left = NULL;
     node->right = NULL;
+    node->oldstreamfd = 0;
     token->spec = origin->spec;
     memset(token->element, '\0', ELEMENT_MAX);
     strncpy(token->element, origin->element, strlen(origin->element));
@@ -142,21 +144,30 @@ void _init_redirect_out_stream(node_t *current) {
     char *mode;
     const char *streamname = current->token->element;
     switch (current->token->spec) {
-    case REDIRECT_OUT:
-        mode = "w+";
+    case REDIRECT_OUT: case REDIRECT_OUT_COMPOSITION:
+        mode = "w";
         break;
     case REDIRECT_OUT_APPEND:
-        mode = "a+";
+        mode = "a";
         break;
     default:
         break;
     }
-    if (!_is_abstract_node(current)) {
-        stream = fopen(streamname, mode);
+    if (current->token->spec == REDIRECT_OUT_COMPOSITION) {
+        if (!_is_abstract_node(current)) {
+            streamfd = atoi(streamname);;
+        } else {
+            streamfd = STDOUT_FILENO;
+        }
     } else {
-        stream = stdout;
+        if (!_is_abstract_node(current)) {
+            streamfd = atoi(streamname);
+            stream = fdopen(streamfd, mode);
+        } else {
+            stream = stdout;
+        }
+        streamfd = fileno(stream);
     }
-    streamfd = fileno(stream);
     dup2(current->oldstreamfd, streamfd);
     close(current->oldstreamfd);
 }
