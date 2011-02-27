@@ -8,6 +8,7 @@
  */
 
 #include <fcntl.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -31,7 +32,7 @@ static void _eat_home(const node_t *current,
 static void _eat_env(const node_t *current,
                      command_t *current_command, node_t *parent, node_t *root);
 // static void _eat_word(const node_t *current, command_t *current_command);
-static void _eat_word(node_t *current, command_t *current_command, node_t *root);
+static void _eat_word(node_t *current, command_t *current_command, bool fstflag, node_t *root);
 static void _eat_env_assignment(const node_t *current,
                                 command_t *current_command, node_t *root);
 // static void _eat_redirection_out(const node_t *current, command_t *current_command,
@@ -186,7 +187,7 @@ static void _eat_env(const node_t *current,
  * _eat_word - eat <word>
  */
 static void _eat_word(node_t *current, command_t *current_command,
-                      node_t *root) {
+                      bool fstflag, node_t *root) {
     const node_t *elh = current->left;  // container_of(&(current->head->left), node_t, head);
     node_t *word = current->right;  // container_of(&(current->head->right), node_t, head);
 
@@ -204,29 +205,34 @@ static void _eat_word(node_t *current, command_t *current_command,
     case NUM:
         _eat_num(elh, current_command, current, root);
         break;
-    case HOME:
+    case HOME: case HOME_WORD:
         _eat_home(elh, current_command, current, root);
         break;
     default:
         break;
     }
     
-    if (!current_command->command_flag) {
-        strncat(current_command->cmd, current->token->element, ELEMENT_MAX);
-        if (current_command->argc < ARG_MAX)
-            current_command->argv[current_command->argc++] = current->token->element;
-        else
-            print_error("psh: too many arguments.", root);
-        current_command->command_flag = true;
-    } else {
-        if (current_command->argc < ARG_MAX)
-            current_command->argv[current_command->argc++] = current->token->element;
-        else
-            print_error("psh: too many arguments.", root);
+    if (word != NULL && _is_word(word->token)) {
+        _eat_word(word, current_command, false, root);
+        strncat(current->token->element,
+                word->token->element, strlen(word->token->element));
     }
-
-    if (word != NULL && _is_word(word->token))
-        _eat_word(word, current_command, root);
+    
+    if (fstflag) {
+        if (!current_command->command_flag) {
+            strncat(current_command->cmd, current->token->element, ELEMENT_MAX);
+            if (current_command->argc < ARG_MAX)
+                current_command->argv[current_command->argc++] = current->token->element;
+            else
+                print_error("psh: too many arguments.", root);
+            current_command->command_flag = true;
+        } else {
+            if (current_command->argc < ARG_MAX)
+                current_command->argv[current_command->argc++] = current->token->element;
+            else
+                print_error("psh: too many arguments.", root);
+        }
+    }
 }
 
 /*
@@ -374,7 +380,7 @@ static void _eat_command_element(const node_t *current,
     if (wer == NULL)  return;
     switch (wer->token->spec) {
     case WORD_PATTERN:
-        _eat_word((node_t *)wer, current_command, root);
+        _eat_word((node_t *)wer, current_command, true, root);
         break;
     case ENV_ASSIGNMENT:
         _eat_env_assignment(wer, current_command, root);

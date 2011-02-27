@@ -21,6 +21,8 @@
 static token_t *_init_token(token_t *t);
 static void _append_token(token_t *token, const char *c);
 static const token_t *_scan_word(tokenizer_t *t);
+static const token_t *_scan_alphanum(tokenizer_t *t);
+static const token_t *_scan_only_alphanum(tokenizer_t *t);
 static const token_t *_scan_letter(tokenizer_t *t);
 static const token_t *_scan_num(tokenizer_t *t);
 static const token_t *_scan_env(tokenizer_t *t);
@@ -165,6 +167,33 @@ static const token_t *_scan_letter(tokenizer_t *t)
     
     return &(t->token);
 }
+
+/*
+ * _scan_alphanum - Scan <alphanum>
+ */
+static const token_t *_scan_only_alphanum(tokenizer_t *t)
+{
+    switch (t->c) {
+    case '0': case '1': case '2': case '3': case '4': case '5': case '6':
+    case '7': case '8': case '9':
+    case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
+    case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
+    case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
+    case 'v': case 'w': case 'x': case 'y': case 'z': 
+    case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
+    case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
+    case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
+    case 'V': case 'W': case 'X': case 'Y': case 'Z': 
+        // t->token.spec = ALPHANUM;
+        _append_token(&(t->token), &(t->c));
+        t->c = _getc(t->input);
+        _scan_only_alphanum(t);
+        break;
+    default:  break;
+    }
+    return &(t->token);
+}
+
 
 /*
  * _scan_alphanum - Scan <alphanum>
@@ -332,9 +361,9 @@ static const token_t *_scan_home(tokenizer_t *t)
     switch (t->c) {
     case '~':
         t->token.spec = HOME;
-        _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
-        _scan_alphanum(t);
+        _scan_only_alphanum(t);
+        if (!isspace(t->c)) t->token.spec = HOME_WORD;
         break;
     default: break;
     }
@@ -469,17 +498,14 @@ const token_t  *_next_token(tokenizer_t *t)
     case '~':
         t->token.spec = HOME;
         _scan_home(t);
-        t->c = _getc(t->input);
         break;
     case '<':
         t->token.spec = REDIRECT_IN;
         _scan_redirect_in(t);
-        // t->c = _getc(t->input);
         break;
     case '>':
         t->token.spec = REDIRECT_OUT;
         _scan_redirect_out(t);
-        // t->c = _getc(t->input);
         break;
     case '|':
         t->token.spec = PIPED_COMMAND;

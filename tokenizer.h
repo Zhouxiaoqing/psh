@@ -31,6 +31,7 @@ typedef enum token_spec {
     ALPHANUM,
     SPECIAL,
     HOME,
+    HOME_WORD,
     ENV,
     NUM,
     ENV_ASSIGNMENT,

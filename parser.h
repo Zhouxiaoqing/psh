@@ -25,7 +25,7 @@
     REDIRECT_OUT: case REDIRECT_OUT_APPEND: case REDIRECT_OUT_COMPOSITION
 
 #define WORD_PATTERN  \
-    WORD: case ENV: case LETTER: case ALPHANUM: case NUM: case HOME
+    WORD: case ENV: case LETTER: case ALPHANUM: case NUM: case HOME: case HOME_WORD
 
 typedef struct parser {
     node_t *root;
@@ -68,7 +68,7 @@ static inline const bool _is_env(const token_t *t)
  */
 static inline const bool _is_home(const token_t *t)
 {
-    return (t->spec == HOME) ? true : false;
+    return (t->spec == HOME || t->spec == HOME_WORD) ? true : false;
 }
 
 /*

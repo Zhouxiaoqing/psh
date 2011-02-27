@@ -26,7 +26,8 @@ static const node_t *_parse_env(parser_t *p, tokenizer_t *t);
 static const node_t *_parse_word(parser_t *p, tokenizer_t *t, node_t *parent);
 static const node_t *
 _parse_env_assignment(parser_t *p, tokenizer_t *t, node_t *parent);
-static const node_t *_parse_home(parser_t *p, tokenizer_t *t, node_t *parent);
+// static const node_t *_parse_home(parser_t *p, tokenizer_t *t, node_t *parent);
+static const node_t *_parse_home(parser_t *p, tokenizer_t *t);
 static const node_t *
 _parse_redirect_out(parser_t *p, tokenizer_t *t, node_t *parent);
 static const node_t *
@@ -121,11 +122,12 @@ static const node_t *_parse_env(parser_t *p, tokenizer_t *t)
  */
 static const node_t *_parse_word(parser_t *p, tokenizer_t *t, node_t *parent)
 {
-    const token_t *_elh;
-    const node_t *elh;
+    const token_t *_elh, *_word;
+    const node_t *elh, *word;
 
     _elh = current_token(t);
     if (!_is_word(_elh))  syntax_error(p, t);
+    word = NULL;
     switch (_elh->spec) {
     case ENV:
         elh = _parse_env(p, t);
@@ -140,13 +142,20 @@ static const node_t *_parse_word(parser_t *p, tokenizer_t *t, node_t *parent)
         elh = _parse_num(p, t);
         break;
     case HOME:
-        elh = _parse_home(p, t, parent);
+        // elh = _parse_home(p, t, parent);
+        elh = _parse_home(p, t);
+        break;
+    case HOME_WORD:
+        elh = _parse_home(p, t);
+        _word = next_token(t);
+        if (!_is_word(_word))  syntax_error(p, t);
+        word = _parse_word(p, t, init_abstract_node(WORD));
         break;
     default:
         break;
     }
     
-    create_tree(parent, elh, NULL);
+    create_tree(parent, elh, word);
     
     return parent;
 }
@@ -171,16 +180,18 @@ _parse_env_assignment(parser_t *p, tokenizer_t *t, node_t *parent)
 /*
  * _parse_home - Parse <home>
  */
-static const node_t *_parse_home(parser_t *p, tokenizer_t *t, node_t *parent)
+// static const node_t *_parse_home(parser_t *p, tokenizer_t *t, node_t *parent)
+static const node_t *_parse_home(parser_t *p, tokenizer_t *t)
 {    
     const token_t *_home = current_token(t);
     const node_t *home;
 
     if (!_is_home(_home))  syntax_error(p, t);
     home = init_node(_home);
-    create_tree(parent, home, NULL);
+    // create_tree(parent, home, NULL);
     
-    return parent;
+    // return parent;
+    return home;
 }
 
 /*
