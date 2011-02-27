@@ -61,7 +61,7 @@ Shell input syntax in BNF
                   | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' 
                   | 'K' | 'L' | 'M' | 'N' | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' 
                   | 'U' | 'V' | 'W' | 'X' | 'Y' | 'Z' 
-        <alphanum> ::= (<alpha> | <num>) { <alphanum> }
+        <alphanum> ::= (<alpha> | <num> | '_' ) { <alphanum> }
         <special> ::= '!' | '"' | '#' | '%' | ''' | '(' | ')' | '*' | '+' | ',' 
                     | '-' | '.' | '/' | ':' | ';" | '?' | '@' | '[' | ']' | '&' 
                     | '\' | '^' | '_' | '`' | '{' | '|' | '}' 
@@ -69,7 +69,7 @@ Shell input syntax in BNF
         <home> ::= '~' { <alphanum> }
         <env> ::= '$' { '{' } <word> { '}' }
         <num> ::= <digit> { <num> }
-        <env_assignment> ::= '=' <word>
+        <env_assignment> ::= <alphanum> '=' <word>
         <letter> ::= (<alphanum> | <special>) { <letter> }
         
 
