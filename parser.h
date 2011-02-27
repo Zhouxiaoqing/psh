@@ -152,12 +152,22 @@ static inline const bool _is_piped_command(const token_t *t)
     return (t->spec == PIPED_COMMAND || _is_command(t)) ? true : false;
 }
 
+
 /*
  * _is_eol - chech whether token is '\n'
  */
 static inline const bool _is_eol(const token_t *t)
 {
     return (t->spec == END_OF_LINE) ? true : false;
+}
+
+
+/*
+ * _is_eol - chech whether token is '\n'
+ */
+static inline const bool _is_eof(const token_t *t)
+{
+    return (t->spec == END_OF_FILE) ? true : false;
 }
 
 /**

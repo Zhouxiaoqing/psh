@@ -73,7 +73,7 @@ tokenizer_t *init_tokenizer(const char *input)
  */
 static token_t *_init_token(token_t *t)
 {
-    t->spec = ERROR;
+    t->spec = END_OF_FILE;
     memset((void *) t->element, '\0', sizeof(char) * ELEMENT_MAX);
     
     return t;
@@ -107,6 +107,8 @@ static void _append_token(token_t *token, const char *c)
 static const token_t *_scan_word(tokenizer_t *t)
 {
     switch (t->c) {
+    case '\\':
+        t->c = _getc(t->input);
     case '0': case '1': case '2': case '3': case '4': case '5': case '6':
     case '7': case '8': case '9':
     case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
@@ -119,15 +121,12 @@ static const token_t *_scan_word(tokenizer_t *t)
     case 'V': case 'W': case 'X': case 'Y': case 'Z': 
     case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
     case '*': case '+': case ',': case '-': case '.': case '/': case ':':
-    case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
-    case '^': case '_': case '`': case '{': case '|': case '}': case '~':
+    case ';': case '?': case '@': case '[': case ']': case '&': /* case '\\': */
+    case '^': case '_': case '`': case '{': case '|': case '}': case '~': case '=':
         t->token.spec = WORD;
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
         _scan_word(t);
-        break;
-    case '=':
-        _scan_env_assignment(t);
         break;
     default: break;
     }
@@ -141,6 +140,8 @@ static const token_t *_scan_word(tokenizer_t *t)
 static const token_t *_scan_letter(tokenizer_t *t)
 {
     switch (t->c) {
+    case '\\':
+        t->c = _getc(t->input);
     case '0': case '1': case '2': case '3': case '4': case '5': case '6':
     case '7': case '8': case '9':
     case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
@@ -153,8 +154,9 @@ static const token_t *_scan_letter(tokenizer_t *t)
     case 'V': case 'W': case 'X': case 'Y': case 'Z': 
     case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
     case '*': case '+': case ',': case '-': case '.': case '/': case ':':
-    case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
+    case ';': case '?': case '@': case '[': case ']': case '&': /* case '\\': */
     case '^': case '_': case '`': case '{': case '|': case '}': /* case '~': */
+    case '=':
         t->token.spec = LETTER;
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
@@ -167,7 +169,7 @@ static const token_t *_scan_letter(tokenizer_t *t)
 }
 
 /*
- * _scan_alphanum - Scan <alphanum>
+ * _scan_only_alphanum - Scan only <alphanum>
  */
 static const token_t *_scan_only_alphanum(tokenizer_t *t)
 {
@@ -215,9 +217,14 @@ static const token_t *_scan_alphanum(tokenizer_t *t)
         t->c = _getc(t->input);
         _scan_alphanum(t);
         break;
+    case '=':
+        _scan_env_assignment(t);
+        break;
+    case '\\':
+        t->c = _getc(t->input);
     case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
     case '*': case '+': case ',': case '-': case '.': case '/': case ':':
-    case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
+    case ';': case '?': case '@': case '[': case ']': case '&': /* case '\\': */
     case '^': /* case '_': */ case '`': case '{': case '}': case '~':
         t->token.spec = LETTER;
         _append_token(&(t->token), &(t->c));
@@ -257,10 +264,12 @@ static const token_t *_scan_num(tokenizer_t *t)
         t->c = _getc(t->input);
         _scan_alphanum(t);
         break;
+    case '\\':
+        t->c = _getc(t->input);
     case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
     case '*': case '+': case ',': case '-': case '.': case '/': case ':':
-    case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
-    case '^': /* case '_': */ case '`': case '{': case '}': case '~':
+    case ';': case '?': case '@': case '[': case ']': case '&': /* case '\\': */
+    case '^': /* case '_': */ case '`': case '{': case '}': case '~': case '=':
         t->token.spec = LETTER;
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
@@ -459,10 +468,12 @@ const token_t  *_next_token(tokenizer_t *t)
         _scan_alphanum(t);
         t->c = _getc(t->input);
         break;
+    case '\\':
+        t->c = _getc(t->input);
     case '!': case '"': case '#': case '%': case '\'': case '(': case ')':
     case '*': case '+': case ',': case '-': case '.': case '/': case ':':
-    case ';': case '?': case '@': case '[': case ']': case '&': case '\\':
-    case '^': /* case '_': */case '`': case '{': case '}': 
+    case ';': case '?': case '@': case '[': case ']': case '&': /* case '\\': */
+    case '^': /* case '_': */case '`': case '{': case '}':  case '=':
         t->token.spec = LETTER;
         _scan_letter(t);
         t->c = _getc(t->input);

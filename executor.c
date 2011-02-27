@@ -49,7 +49,6 @@ static void _eat_command(const node_t *current, command_t *current_command,
 static void _eat_piped_command(const node_t *current,
                                command_t *current_command, const bool head,
                                node_t *root);
-
 /**
  * print_error - print error message and finalize program
  */
@@ -88,7 +87,6 @@ static int _fork_exec(command_t *current_command,
             }
             dup2(current_command->output_fd, STDOUT_FILENO);
             close(current_command->output_fd);
-            
             execvp(current_command->cmd, current_command->argv);
             print_error("psh: command not found.\n", root);
             break;
@@ -410,8 +408,9 @@ static void _eat_piped_command(const node_t *current, command_t *current_command
 {
     const node_t *command_element, *command;
     command_element = current->left;  // container_of(&(current->head->left), node_t, head);
+    if (_is_eof(command_element->token) || _is_eol(command_element->token))
+        return ;
     command = current->right;  // container_of(&(current->head->right), node_t, head);
-    if (command_element != NULL && _is_eol(command_element->token))  return;
     _eat_command_element(command_element, current_command, root);
     if (command != NULL && _is_command(command->token)) {
         _fork_exec(current_command, head_flag, false, root);

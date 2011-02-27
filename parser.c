@@ -337,6 +337,12 @@ _parse_piped_command(parser_t *p, tokenizer_t *t, node_t *parent)
     const node_t *command_element, *command;
     
     _command_element = current_token(t);
+    if (_is_eof(_command_element) || _is_eol(_command_element)) {
+        command_element = init_node(_command_element);
+        create_tree(parent, command_element, NULL);
+        return parent;
+    }
+    
     if (!_is_command_element(_command_element))  syntax_error(p, t);
     command_element = _parse_command_element(
         p, t, init_abstract_node(COMMAND_ELEMENT));
