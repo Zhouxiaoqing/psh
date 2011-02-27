@@ -148,7 +148,6 @@ static const node_t *_parse_word(parser_t *p, tokenizer_t *t, node_t *parent)
         elh = _parse_num(p, t);
         break;
     case HOME:
-        // elh = _parse_home(p, t, parent);
         elh = _parse_home(p, t);
         break;
     case HOME_WORD:
@@ -186,7 +185,6 @@ _parse_env_assignment(parser_t *p, tokenizer_t *t, node_t *parent)
 /*
  * _parse_home - Parse <home>
  */
-// static const node_t *_parse_home(parser_t *p, tokenizer_t *t, node_t *parent)
 static const node_t *_parse_home(parser_t *p, tokenizer_t *t)
 {    
     const token_t *_home = current_token(t);
@@ -194,9 +192,7 @@ static const node_t *_parse_home(parser_t *p, tokenizer_t *t)
 
     if (!_is_home(_home))  syntax_error(p, t);
     home = init_node(_home);
-    // create_tree(parent, home, NULL);
     
-    // return parent;
     return home;
 }
 
@@ -213,14 +209,6 @@ _parse_redirect_in(parser_t *p, tokenizer_t *t, node_t *parent)
     _redirect_in = current_token(t);
     if (!_is_redirect_in(_redirect_in))  syntax_error(p, t);
     
-    /* switch (_redirect_in->spec) { */
-    /* case REDIRECT_IN: */
-    /*     redirect_in = init_node(_redirect_in); */
-    /*     break; */
-    /* default: */
-    /*     redirect_in = NULL; */
-    /*     break; */
-    /* } */
     _word = next_token(t);
     if (!_is_word(_word))  syntax_error(p, t);
     word = _parse_word(p, t, parent);
@@ -255,8 +243,6 @@ static const node_t *_parse_redirect_out(parser_t *p, tokenizer_t *t, node_t *pa
     default:
         break;
     }
-    
-    // create_tree(parent, redirect_out, NULL);
 
     return parent;
 }
@@ -273,11 +259,9 @@ _parse_redirection(parser_t *p, tokenizer_t *t, node_t *parent)
     _redirection = current_token(t);
     if (!_is_redirection(_redirection))  syntax_error(p, t);
     switch (_redirection->spec) {
-        // case REDIRECT_OUT: case REDIRECT_OUT_APPEND: case REDIRECT_OUT_COMPOSITION:
     case REDIRECT_OUT_PATTERN:
         redirection = _parse_redirect_out(p, t, init_node(_redirection));
         break;
-        // case REDIRECT_IN: case REDIRECT_IN_OUT:
     case REDIRECT_IN_PATTERN:
         redirection = _parse_redirect_in(
             p, t, init_node(_redirection));
@@ -302,13 +286,6 @@ _parse_redirection_list(parser_t *p, tokenizer_t *t, node_t *parent)
     _redirection = current_token(t);
     if (!_is_redirection(_redirection))  syntax_error(p, t);
     redirection = _parse_redirection(p, t, init_abstract_node(REDIRECTION));
-    /* _redirection_list = next_token(t); */
-    /* if (_is_redirection_list(_redirection_list)) */
-    /*     redirection_list = _parse_redirection_list( */
-    /*         p, t, init_abstract_node(REDIRECTION_LIST)); */
-    /* else */
-    /*     redirection_list = NULL; */
-    /* create_tree(parent, redirection, redirection_list); */
     create_tree(parent, redirection, NULL);
 
     return parent;
@@ -326,15 +303,12 @@ _parse_command_element(parser_t *p, tokenizer_t *t, node_t *parent)
     _wer = current_token(t);
     if (!_is_command_element(_wer))  syntax_error(p, t);
     switch (_wer->spec) {
-        // case WORD: case ENV: case LETTER: case ALPHANUM: case NUM:
     case WORD_PATTERN:
         wer = _parse_word(p, t, init_abstract_node(WORD));
         break;
     case ENV_ASSIGNMENT:
         wer = _parse_env_assignment(p, t, init_abstract_node(ENV_ASSIGNMENT));
         break;
-        // case REDIRECT_OUT: case REDIRECT_OUT_APPEND: case REDIRECT_OUT_COMPOSITION:
-        // case REDIRECT_IN: case REDIRECT_IN_OUT:
     case REDIRECT_PATTERN:
         wer = _parse_redirection_list(p, t, init_abstract_node(REDIRECTION_LIST));
         break;

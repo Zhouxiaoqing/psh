@@ -30,7 +30,6 @@ static const token_t *_scan_home(tokenizer_t *t);
 static const token_t *_scan_env_assignment(tokenizer_t *t);
 static const token_t *_scan_redirect_in(tokenizer_t *t);
 static const token_t *_scan_redirect_out(tokenizer_t *t);
-// static const token_t *_next_token(tokenizer_t *t);
 
 /*
  * _getc - get a character from input
@@ -129,7 +128,6 @@ static const token_t *_scan_word(tokenizer_t *t)
         break;
     case '=':
         _scan_env_assignment(t);
-        // t->c = _getc(t->input);
         break;
     default: break;
     }
@@ -185,7 +183,6 @@ static const token_t *_scan_only_alphanum(tokenizer_t *t)
     case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
     case 'V': case 'W': case 'X': case 'Y': case 'Z': 
     case '_':
-        // t->token.spec = ALPHANUM;
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
         _scan_only_alphanum(t);
@@ -270,18 +267,12 @@ static const token_t *_scan_num(tokenizer_t *t)
         _scan_letter(t);
         break;
     case '>':
-        /* if (t->token.spec == REDIRECT_OUT) */
-        /*     t->token.spec = REDIRECT_OUT_APPEND; */
-        /* else */
-        /*     t->token.spec = REDIRECT_OUT; */
         t->token.spec = REDIRECT_OUT;
         _scan_redirect_out(t);
-        // t->c = _getc(t->input);
         break;
     case '<':
         t->token.spec = REDIRECT_IN;
         _scan_redirect_in(t);
-        // t->c = _getc(t->input);
         break;
     default: break;
     }
@@ -322,28 +313,9 @@ static const token_t *__scan_env(tokenizer_t *t, char *key)
         break;
     case '}':
         t->c = _getc(t->input);
-        /* if (t->token.spec != ENV) {
-           strncat(t->token.element, key, strlen(key));
-           t->c = _getc(t->input);
-           __scan_env(t, key);
-        } else {*/
-        // t->c = _getc(t->input);
-        // break;
     default:
         if (t->token.spec == ENV)  t->token.spec = ENV_WORD;
         strncat(t->token.element, key, strlen(key));
-        // t->c = _getc(t->input);
-        // __scan_env(t, key);
-            /*
-            t->token.spec = WORD;
-            char *value = getenv(key);
-            if (value)
-                strncat(t->token.element, value, strlen(value));
-            if (t->c != '/')
-                t->c = _getc(t->input);
-            _scan_word(t);
-            break;
-            } */
         break;
     }
     
@@ -390,7 +362,6 @@ static const token_t *_scan_env_assignment(tokenizer_t *t)
         _append_token(&(t->token), &(t->c));
         t->c = _getc(t->input);
         _scan_word(t);
-        // t->c = _getc(t->input);
         break;
     default: break;
     }
@@ -410,7 +381,6 @@ static const token_t *_scan_redirect_in(tokenizer_t *t)
         switch (t->c) {
         case '>':
             t->token.spec = REDIRECT_IN_OUT;
-            // t->c = _getc(t->input);
             break;
         default: break;
         }
@@ -432,11 +402,9 @@ static const token_t *_scan_redirect_out(tokenizer_t *t)
         switch (t->c) {
         case '>':
             t->token.spec = REDIRECT_OUT_APPEND;
-            // t->c = _getc(t->input);
             break;
         case '&':
             t->token.spec = REDIRECT_OUT_COMPOSITION;
-            // t->c = _getc(t->input);
             break;
         default: break;
         }
@@ -502,7 +470,6 @@ const token_t  *_next_token(tokenizer_t *t)
     case '$':
         t->token.spec = ENV;
         _scan_env(t);
-        // t->c = _getc(t->input);
         break;
     case '~':
         t->token.spec = HOME;

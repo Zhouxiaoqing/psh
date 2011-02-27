@@ -31,14 +31,11 @@ static void _eat_home(const node_t *current,
                       command_t *current_command, node_t *parent, node_t *root);
 static void _eat_env(const node_t *current,
                      command_t *current_command, node_t *parent, node_t *root);
-// static void _eat_word(const node_t *current, command_t *current_command);
 static void _eat_word(node_t *current, command_t *current_command, bool fstflag, node_t *root);
 static void _eat_env_assignment(const node_t *current,
                                 command_t *current_command, node_t *root);
-// static void _eat_redirection_out(const node_t *current, command_t *current_command,
 static void _eat_redirection_out(node_t *current, command_t *current_command,
                                  node_t *root);
-// static void _eat_redirection_in(const node_t *current, command_t *current_command,
 static void _eat_redirection_in(node_t *current, command_t *current_command,
                                 node_t *root);
 static void _eat_redirection(const node_t *current, command_t *current_command,
@@ -251,7 +248,6 @@ static void _eat_env_assignment(const node_t *current,
 /*
  * _eat_redirection_out - eat <redirection_out>
  */
-// static void _eat_redirection_out(const node_t *current,
 static void _eat_redirection_out(node_t *current,
                                  command_t *current_command, node_t *root) {
     const node_t *redirection_out = current;
@@ -283,8 +279,6 @@ static void _eat_redirection_out(node_t *current,
 
     if (redirection_out->token->spec == REDIRECT_OUT_COMPOSITION) {
         int redirectfd = atoi(filename);
-        // fclose(stream);
-        // stream = fdopen(fd, mode);
         dup2(redirectfd, fileno(stream));
         fclose(stream);
     } else {
@@ -297,7 +291,6 @@ static void _eat_redirection_out(node_t *current,
 /*
  * _eat_redirection_in - eat <redirection_in>
  */
-// static void _eat_redirection_in(const node_t *current,
 static void _eat_redirection_in(node_t *current,
                                 command_t *current_command, node_t *root) {
     const node_t *redirection_in = current;
@@ -309,7 +302,6 @@ static void _eat_redirection_in(node_t *current,
     if (!_is_abstract_node(redirection_in)) {
         const char* streamname = redirection_in->token->element;
         int streamfd = atoi(streamname);
-        // stream = fopen(streamname, "r");
         stream = fdopen(streamfd, "r");
     } else {
         stream = stdin;
@@ -337,12 +329,10 @@ static void _eat_redirection_in(node_t *current,
  */
 static void _eat_redirection(const node_t *current,
                              command_t* current_command, node_t *root) {
-    // const node_t *redirect_in_out = 
     node_t *redirect_in_out = 
         current->left;  // container_of(&(current->head->left), node_t, head);
     
     switch (redirect_in_out->token->spec) {
-        // case REDIRECT_IN: case REDIRECT_IN_OUT:
     case REDIRECT_IN_PATTERN:
         _eat_redirection_in(redirect_in_out, current_command, root);
         break;
@@ -386,10 +376,6 @@ static void _eat_command_element(const node_t *current,
     case ENV_ASSIGNMENT:
         _eat_env_assignment(wer, current_command, root);
         break;
-    /* case REDIRECTION_LIST: */
-    /* case REDIRECTION: */
-    /* case REDIRECT_IN:  case REDIRECT_IN_OUT: */
-    /* case REDIRECT_OUT: case REDIRECT_OUT_APPEND:  case REDIRECT_OUT_COMPOSITION: */
     case REDIRECT_PATTERN:
         _eat_redirection_list(wer, current_command, root);
         break;

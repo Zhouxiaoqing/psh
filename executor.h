@@ -20,13 +20,10 @@
 typedef struct command {
     char cmd[ELEMENT_MAX];
     char *argv[ARG_MAX];
-    // char *argv;
     int argc;
     bool command_flag;
     int input_fd;
     int output_fd;
-    // FILE *ifstream[ELEMENT_MAX];
-    // FILE *ofstream[ELEMENT_MAX];
 } command_t;
 
 /**

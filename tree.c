@@ -56,7 +56,6 @@ static node_t *_init_node(const token_t *origin)
     memset(token->element, '\0', ELEMENT_MAX);
     strncpy(token->element, origin->element, strlen(origin->element));
     node->token = token;
-    // free(origin);
     
     return node;
 }
@@ -101,7 +100,6 @@ node_t *init_abstract_node(const token_spec_t spec)
     token->spec = spec;
     memset(token->element, '\0', ELEMENT_MAX);
     node = _init_node(token);
-    // free(token);
     
     return node;
 }

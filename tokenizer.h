@@ -46,7 +46,6 @@ typedef enum token_spec {
 typedef struct token {
     token_spec_t spec;
     char element[ELEMENT_MAX];
-    // char *element;
 } token_t;
 
 typedef struct tokenizer {
