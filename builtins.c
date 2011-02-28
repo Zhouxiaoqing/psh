@@ -40,11 +40,29 @@ static bool _check_cd(command_t *current_command, node_t *root)
     return result;
 }
 
+/*
+ * _check_exit - check whether exit is in `current_command' and if so, do chdir
+ */
+static bool _check_exit(command_t *current_command, node_t *root)
+{
+    bool result;
+    switch (strcmp(current_command->cmd, "exit")) {
+    case 0:
+        print_error("", root);
+        result = true;
+    default:
+        result = false;
+        break;
+    }
+    return result;
+}
+
 
 /**
  * check_builtins - check builtin commands
  */
 bool check_builtins(command_t *current_command, node_t * root)
 {
-    return _check_cd(current_command, root);
+    return _check_cd(current_command, root) ||
+        _check_exit(current_command, root);
 }
