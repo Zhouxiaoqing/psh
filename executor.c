@@ -21,6 +21,9 @@
 #include "executor.h"
 
 
+static void _init_redirect_in_stream(node_t *current);
+static void _init_redirect_out_stream(node_t *current);
+static void _init_redirection_stream(node_t *current);
 static int _fork_exec(command_t *current_command,
                       const bool head_flag, const bool tail_flag, node_t *root);
 static void _eat_letter(const node_t *current,
@@ -109,6 +112,84 @@ static int _fork_exec(command_t *current_command,
     }
 
     return 0;
+}
+
+/*
+ * _init_redirect_in_stream - initialize stream binded by redirect in
+ */
+static void _init_redirect_in_stream(node_t *current) {
+    node_t *word = current->left;
+    FILE *stream;
+    int streamfd;
+    const char *streamname = word->token->element;
+    if (!_is_abstract_node(current)) {
+        stream = fopen(streamname, "r");
+    } else {
+        stream = stdin;
+    }
+    streamfd = fileno(stream);
+    dup2(current->oldstreamfd, streamfd);
+    close(current->oldstreamfd);
+}
+
+/*
+ * _init_redirect_out_stream - initialize stream binded by redirect out
+ */
+static void _init_redirect_out_stream(node_t *current) {
+    node_t *word = current->left;
+    FILE *stream;
+    int streamfd;
+    char *mode;
+    const char *streamname = current->token->element;
+    switch (current->token->spec) {
+    case REDIRECT_OUT: case REDIRECT_OUT_COMPOSITION:
+        mode = "w";
+        break;
+    case REDIRECT_OUT_APPEND:
+        mode = "a";
+        break;
+    default:
+        break;
+    }
+    if (current->token->spec == REDIRECT_OUT_COMPOSITION) {
+        if (!_is_abstract_node(current)) {
+            streamfd = atoi(streamname);;
+        } else {
+            streamfd = STDOUT_FILENO;
+        }
+    } else {
+        if (!_is_abstract_node(current)) {
+            streamfd = atoi(streamname);
+            stream = fdopen(streamfd, mode);
+        } else {
+            stream = stdout;
+        }
+        streamfd = fileno(stream);
+    }
+    dup2(current->oldstreamfd, streamfd);
+    close(current->oldstreamfd);
+}
+
+/*
+ * _init_redirection_stream - initialize stream
+ */
+static void _init_redirection_stream(node_t *current) {
+    node_t *left, *right;
+    
+    if (_is_redirect_in(current->token))
+        _init_redirect_in_stream(current);
+
+    if (_is_redirect_out(current->token))
+        _init_redirect_out_stream(current);
+
+    if (current->left != NULL) {
+        left = (node_t *)current->left;
+        _init_redirection_stream(left);
+    }
+    if (current->right != NULL) {
+        right = (node_t *)current->right;
+        _init_redirection_stream(right);
+    }
 }
 
 
@@ -412,7 +493,7 @@ static void _eat_command(const node_t *current, command_t *current_command,
 static void _eat_piped_command(const node_t *current, command_t *current_command,
                                const bool head_flag, node_t *root)
 {
-    const node_t *command_element, *command;
+    node_t *command_element, *command;
     command_element = current->left;  // container_of(&(current->head->left), node_t, head);
     if (_is_eof(command_element->token) || _is_eol(command_element->token))
         return ;
@@ -420,10 +501,12 @@ static void _eat_piped_command(const node_t *current, command_t *current_command
     _eat_command_element(command_element, current_command, root);
     if (command != NULL && _is_command(command->token)) {
         _fork_exec(current_command, head_flag, false, root);
+        _init_redirection_stream(command_element);
         _init_command(current_command);
         _eat_piped_command(command, current_command, false, root);
     } else {
         _fork_exec(current_command, head_flag, true, root);
+        _init_redirection_stream(command_element);
     }
 }
 
