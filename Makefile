@@ -11,10 +11,10 @@ check-syntax:
 
 all:	psh
 
-psh:	psh.o tree.o tokenizer.o parser.o executor.o
+psh:	psh.o tree.o tokenizer.o parser.o executor.o builtins.o
 		$(CC) $(CFLAGS) -o $(TARGET) *.o
 
-debug:  psh.o tree.o tokenizer.o parser.o executor.o
+debug:  psh.o tree.o tokenizer.o parser.o executor.o builtins.o
 		$(CC) $(CFLAGS_DEBUG) -o $(TARGET) *.o
 
 clean:

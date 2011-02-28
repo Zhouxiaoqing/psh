@@ -17,6 +17,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "builtins.h"
 #include "executor.h"
 
 static int _fork_exec(command_t *current_command,
@@ -49,7 +50,7 @@ static void _eat_command(const node_t *current, command_t *current_command,
 static void _eat_piped_command(const node_t *current,
                                command_t *current_command, const bool head,
                                node_t *root);
-/**
+/**nn
  * print_error - print error message and finalize program
  */
 void print_error(const char *error_message, node_t *root)
@@ -87,12 +88,16 @@ static int _fork_exec(command_t *current_command,
             }
             dup2(current_command->output_fd, STDOUT_FILENO);
             close(current_command->output_fd);
-            execvp(current_command->cmd, current_command->argv);
-            print_error("psh: command not found.\n", root);
+            if (!check_builtins(current_command, root)) {
+                execvp(current_command->cmd, current_command->argv);
+                print_error("psh: command not found.\n", root);
+            }
+            _exit(EXIT_SUCCESS);
             break;
         default:  // case of parent
             close(next_pipe[1]);
             child = wait(NULL);
+            check_builtins(current_command, root);
             if (!tail_flag)
                 current_command->input_fd = next_pipe[0];
             break;

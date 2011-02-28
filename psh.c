@@ -72,6 +72,8 @@ int main(int argc, char **argv)
         root = (node_t *)parse_input(p, t);
         eat_root(root);
         finalize(t, p, root);
+        sprintf(prompt, "%s [0;32m%s$[0;37m ",
+                getenv("USER"), getcwd(NULL, 1024));
     }
     return 0;
 }
