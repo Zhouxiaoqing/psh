@@ -20,6 +20,7 @@
 #include "builtins.h"
 #include "executor.h"
 
+
 static int _fork_exec(command_t *current_command,
                       const bool head_flag, const bool tail_flag, node_t *root);
 static void _eat_letter(const node_t *current,
@@ -50,7 +51,7 @@ static void _eat_command(const node_t *current, command_t *current_command,
 static void _eat_piped_command(const node_t *current,
                                command_t *current_command, const bool head,
                                node_t *root);
-/**nn
+/**
  * print_error - print error message and finalize program
  */
 void print_error(const char *error_message, node_t *root)

@@ -7,7 +7,7 @@ check-syntax:
 		$(CC) -o nul -S $(CHK_SOURCES)
 
 %.o: %.c
-		$(CC) $(CFLAGS_DEBUG) -c $<
+		$(CC) $(CFLAGS) -c $<
 
 all:	psh
 

@@ -1,5 +1,14 @@
+/*
+ * builtins.c - builtins commands
+ *
+ * This source code is licensed under the MIT License.
+ * See the file COPYING for more details.
+ *
+ * @author: Taku Fukushima <tfukushima@dcl.info.waseda.ac.jp>
+ */
+
 #include <stdbool.h>
-#include <stdlib.h>n
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
