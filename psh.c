@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     node_t *root;
     // char input[INPUT_MAX], prompt[100];
     char *input;
-    char prompt[100];
+    char prompt[ELEMENT_MAX];
     
     say_hello();
     sprintf(prompt, "%s [0;32m%s$[0;37m ",

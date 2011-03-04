@@ -453,7 +453,6 @@ const token_t  *_next_token(tokenizer_t *t)
     case '7': case '8': case '9':
         t->token.spec = NUM;
         _scan_num(t);
-        t->c = _getc(t->input);
         break;
     case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
     case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
@@ -466,7 +465,6 @@ const token_t  *_next_token(tokenizer_t *t)
     case '_':
         t->token.spec = ALPHANUM;
         _scan_alphanum(t);
-        t->c = _getc(t->input);
         break;
     case '\\':
         t->c = _getc(t->input);
@@ -476,7 +474,6 @@ const token_t  *_next_token(tokenizer_t *t)
     case '^': /* case '_': */case '`': case '{': case '}':  case '=':
         t->token.spec = LETTER;
         _scan_letter(t);
-        t->c = _getc(t->input);
         break;
     case '$':
         t->token.spec = ENV;
